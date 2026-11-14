@@ -49,7 +49,8 @@ function createTestRepositories(initial?: {
           }
         }
         const created: Vehicle = {
-          id: `v-${vehicles.length + 1}`,
+          ...input,
+          id: input.id ?? `v-${vehicles.length + 1}`,
           name: input.name,
           plateNumber: input.plateNumber,
           manufacturerModel: input.manufacturerModel,
@@ -318,5 +319,78 @@ describe('홈 화면 및 차량 등록/수정/전환 통합 테스트', () => {
       ).toBeInTheDocument();
     });
     expect(screen.getByText('D-60')).toBeInTheDocument();
+  });
+
+  it('차량 상세 제원(차대번호, 인수 후 주행거리, 소모품 규격, 관리 메모)을 조회하고 메모를 수정할 수 있다', async () => {
+    const repos = createTestRepositories({
+      vehicles: [
+        {
+          id: 'v-spec-1',
+          name: '세단',
+          plateNumber: '11가 1111',
+          manufacturerModel: '샘플 세단',
+          modelYear: 2020,
+          registrationDate: '2020.05.15',
+          vehiclePrice: 60000000,
+          purchaseDate: '2025.08.14',
+          purchaseMileage: 50000,
+          purchasePrice: 35000000,
+          currentMileage: 60200,
+          vin: 'TESTVIN1234567890',
+          engineSpec: '2,000cc 터보',
+          tireSize: '245/45R19 (38psi)',
+          consumablesSpec: '에어컨필터 245 * 178 * 28',
+          colorSpec: '실버 메탈릭',
+          memo: '내비 업데이트 메모: 초기값',
+          displayOrder: 0,
+          createdAt: '2026-01-01',
+          updatedAt: '2026-01-01',
+        },
+      ],
+    });
+
+    render(
+      <RepositoryProvider repositories={repos}>
+        <ActiveVehicleProvider>
+          <MemoryRouter initialEntries={['/']}>
+            <AppRoutes />
+          </MemoryRouter>
+        </ActiveVehicleProvider>
+      </RepositoryProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText(/샘플 세단 · 2020년식/)).toBeInTheDocument();
+    });
+
+    // 제원 · 옵션 상세보기 펼치기
+    fireEvent.click(
+      screen.getByRole('button', { name: /제원 · 옵션 상세보기/ }),
+    );
+    expect(
+      screen.getByTestId('vehicle-detail-specs-panel'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('TESTVIN1234567890')).toBeInTheDocument();
+    expect(
+      screen.getByText(/인수 후 \+10,200km 주행/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/에어컨필터 245 \* 178 \* 28/),
+    ).toBeInTheDocument();
+
+    // 비밀번호 · 메모 수정 클릭하여 메모 업데이트
+    fireEvent.click(
+      screen.getByRole('button', { name: '비밀번호 · 메모 수정' }),
+    );
+    fireEvent.change(screen.getByLabelText(/차량 관리 메모/), {
+      target: { value: '내비 업데이트 메모: 변경완료' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: '수정 저장' }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/내비 업데이트 메모: 변경완료/),
+      ).toBeInTheDocument();
+    });
   });
 });

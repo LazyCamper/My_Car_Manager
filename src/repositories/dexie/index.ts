@@ -49,11 +49,47 @@ export class DexieVehicleRepository implements IVehicleRepository {
 
   async save(input: VehicleInput): Promise<Vehicle> {
     const now = new Date().toISOString();
+    const optionalSpecs = {
+      registrationDate: input.registrationDate?.trim() || undefined,
+      purchaseDate: input.purchaseDate?.trim() || undefined,
+      purchaseMileage:
+        typeof input.purchaseMileage === 'number' &&
+        Number.isFinite(input.purchaseMileage) &&
+        input.purchaseMileage >= 0
+          ? Math.round(input.purchaseMileage)
+          : undefined,
+      purchasePrice:
+        typeof input.purchasePrice === 'number' &&
+        Number.isFinite(input.purchasePrice) &&
+        input.purchasePrice >= 0
+          ? Math.round(input.purchasePrice)
+          : undefined,
+      vin: input.vin?.trim() || undefined,
+      engineSpec: input.engineSpec?.trim() || undefined,
+      performanceSpec: input.performanceSpec?.trim() || undefined,
+      fuelSpec: input.fuelSpec?.trim() || undefined,
+      transmission: input.transmission?.trim() || undefined,
+      tireSize: input.tireSize?.trim() || undefined,
+      dimensionSpec: input.dimensionSpec?.trim() || undefined,
+      consumablesSpec: input.consumablesSpec?.trim() || undefined,
+      colorSpec: input.colorSpec?.trim() || undefined,
+      vehiclePrice:
+        typeof input.vehiclePrice === 'number' &&
+        Number.isFinite(input.vehiclePrice) &&
+        input.vehiclePrice >= 0
+          ? Math.round(input.vehiclePrice)
+          : undefined,
+      options: input.options?.trim() || undefined,
+      tinting: input.tinting?.trim() || undefined,
+      memo: input.memo?.trim() || undefined,
+    };
+
     if (input.id) {
       const existing = await this.db.vehicles.get(input.id);
       if (existing) {
         const updated: Vehicle = {
           ...existing,
+          ...optionalSpecs,
           name: input.name.trim(),
           plateNumber: input.plateNumber.trim(),
           manufacturerModel: input.manufacturerModel.trim(),
@@ -75,6 +111,7 @@ export class DexieVehicleRepository implements IVehicleRepository {
       manufacturerModel: input.manufacturerModel.trim(),
       modelYear: Number(input.modelYear),
       currentMileage: Number(input.currentMileage),
+      ...optionalSpecs,
       displayOrder: input.displayOrder ?? count,
       createdAt: now,
       updatedAt: now,

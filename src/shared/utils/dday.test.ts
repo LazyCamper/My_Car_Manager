@@ -55,9 +55,14 @@ describe('D-day 유틸 함수 테스트 (calculateDday)', () => {
     expect(d31.isOverdue).toBe(false);
   });
 
-  it('YYYY-MM-DD 하이픈 입력도 정상 파싱하고 YYYY.MM.DD로 포맷팅한다', () => {
+  it('YYYY-MM-DD 하이픈, YY.M.D, YYMMDD 6자리 숫자, 연·월 표기 입력도 정상 파싱하고 YYYY.MM.DD로 포맷팅한다', () => {
     const parsed = parseDateString('2026-11-20');
     expect(formatDateDot(parsed)).toBe('2026.11.20');
+    expect(formatDateDot('23.11.22')).toBe('2023.11.22');
+    expect(formatDateDot('24.6.7')).toBe('2024.06.07');
+    expect(formatDateDot('200223')).toBe('2020.02.23');
+    expect(formatDateDot('21년1월')).toBe('2021.01.01');
+    expect(formatDateDot('22년 6월20일')).toBe('2022.06.20');
     const dday = calculateDday('2026-11-20', baseDate);
     expect(dday.daysRemaining).toBe(6);
     expect(dday.badgeText).toBe('D-6');
@@ -66,7 +71,7 @@ describe('D-day 유틸 함수 테스트 (calculateDday)', () => {
   it('유효하지 않은 날짜 문자열은 에러를 발생시킨다', () => {
     expect(() => parseDateString('2026.02.30')).toThrow();
     expect(() => parseDateString('2025.02.29')).toThrow(); // 평년 2월 29일 거부
-    expect(() => parseDateString('26.11.14')).toThrow(); // 2자리 연도 거부
+    expect(() => parseDateString('999.11.14')).toThrow(); // 3자리 연도 거부
     expect(() => parseDateString('99999.01.01')).toThrow(); // 5자리 연도 거부
     expect(() => parseDateString('invalid-date')).toThrow();
   });

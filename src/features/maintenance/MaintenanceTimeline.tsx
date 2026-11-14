@@ -2,7 +2,11 @@ import React from 'react';
 import { MaintenanceCategory, MaintenanceLog } from '../../domain/models';
 import { AttachmentThumbnailStrip } from '../../shared/components/AttachmentThumbnailStrip';
 import { formatCurrency, formatMileage } from '../../shared/utils';
-import { getCategoryLabel, MAINTENANCE_CATEGORY_OPTIONS } from './constants';
+import {
+  getCategoryLabel,
+  getLogCategories,
+  MAINTENANCE_CATEGORY_OPTIONS,
+} from './constants';
 
 export type CategoryFilterValue = 'all' | MaintenanceCategory;
 
@@ -22,7 +26,7 @@ export const MaintenanceTimeline: React.FC<MaintenanceTimelineProps> = ({
   const filteredLogs =
     selectedCategory === 'all'
       ? logs
-      : logs.filter((log) => log.category === selectedCategory);
+      : logs.filter((log) => getLogCategories(log).includes(selectedCategory));
 
   return (
     <div className="maintenance-timeline-section">
@@ -68,47 +72,54 @@ export const MaintenanceTimeline: React.FC<MaintenanceTimelineProps> = ({
         </div>
       ) : (
         <ol className="timeline-list" aria-label="정비 내역 타임라인">
-          {filteredLogs.map((log) => (
-            <li key={log.id} className="timeline-item">
-              <div className="timeline-card-container">
-                <button
-                  type="button"
-                  className="timeline-card-btn"
-                  onClick={() => onSelectLog(log)}
-                >
-                  <div className="timeline-card-top">
-                    <div className="timeline-date-group">
-                      <span className="timeline-date">{log.date}</span>
-                      <span className="timeline-category-badge">
-                        {getCategoryLabel(log.category)}
-                      </span>
-                      {log.attachmentIds && log.attachmentIds.length > 0 && (
-                        <span className="timeline-photo-badge">
-                          📷 {log.attachmentIds.length}장
-                        </span>
-                      )}
+          {filteredLogs.map((log) => {
+            const logCategories = getLogCategories(log);
+            return (
+              <li key={log.id} className="timeline-item">
+                <div className="timeline-card-container">
+                  <button
+                    type="button"
+                    className="timeline-card-btn"
+                    onClick={() => onSelectLog(log)}
+                  >
+                    <div className="timeline-card-top">
+                      <div className="timeline-date-group">
+                        <span className="timeline-date">{log.date}</span>
+                        {logCategories.map((cat) => (
+                          <span key={cat} className="timeline-category-badge">
+                            {getCategoryLabel(cat)}
+                          </span>
+                        ))}
+                        {log.attachmentIds && log.attachmentIds.length > 0 && (
+                          <span className="timeline-photo-badge">
+                            📷 {log.attachmentIds.length}장
+                          </span>
+                        )}
+                      </div>
+                      <strong className="timeline-cost">
+                        {formatCurrency(log.cost)}
+                      </strong>
                     </div>
-                    <strong className="timeline-cost">
-                      {formatCurrency(log.cost)}
-                    </strong>
-                  </div>
 
-                  <div className="timeline-card-body">
-                    <strong className="timeline-title">{log.title}</strong>
-                    <span className="timeline-submeta">
-                      주행거리 {formatMileage(log.mileage)}
-                      {log.shopName ? ` · ${log.shopName}` : ''}
-                    </span>
-                    {log.memo && <p className="timeline-memo">{log.memo}</p>}
-                  </div>
-                </button>
+                    <div className="timeline-card-body">
+                      <strong className="timeline-title">{log.title}</strong>
+                      <span className="timeline-submeta">
+                        {typeof log.mileage === 'number'
+                          ? `주행거리 ${formatMileage(log.mileage)}`
+                          : '주행거리 미기재'}
+                        {log.shopName ? ` · ${log.shopName}` : ''}
+                      </span>
+                      {log.memo && <p className="timeline-memo">{log.memo}</p>}
+                    </div>
+                  </button>
 
-                {log.attachmentIds && log.attachmentIds.length > 0 && (
-                  <AttachmentThumbnailStrip attachmentIds={log.attachmentIds} />
-                )}
-              </div>
-            </li>
-          ))}
+                  {log.attachmentIds && log.attachmentIds.length > 0 && (
+                    <AttachmentThumbnailStrip attachmentIds={log.attachmentIds} />
+                  )}
+                </div>
+              </li>
+            );
+          })}
         </ol>
       )}
     </div>

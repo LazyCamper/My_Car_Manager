@@ -12,12 +12,22 @@ export const MAINTENANCE_CATEGORY_OPTIONS: MaintenanceCategoryOption[] = [
   { value: 'brake', label: '브레이크', defaultTitle: '브레이크 패드/오일 정비' },
   { value: 'battery', label: '배터리', defaultTitle: '배터리 교체' },
   { value: 'filter', label: '에어컨·필터', defaultTitle: '에어컨 필터 교체' },
+  { value: 'repair', label: '수리·보증', defaultTitle: '부품 수리/교환' },
+  { value: 'accident_repair', label: '사고·외판', defaultTitle: '외판/사고 수리' },
+  { value: 'camper_as', label: '캠핑·설비', defaultTitle: '캠핑 설비 AS/시공' },
   { value: 'other', label: '직접 입력', defaultTitle: '' },
 ];
 
 export function getCategoryLabel(category: MaintenanceCategory): string {
   const found = MAINTENANCE_CATEGORY_OPTIONS.find((c) => c.value === category);
   return found ? found.label : '기타';
+}
+
+export function getLogCategories(log: MaintenanceLog): MaintenanceCategory[] {
+  if (Array.isArray(log.categories) && log.categories.length > 0) {
+    return Array.from(new Set(log.categories));
+  }
+  return [log.category];
 }
 
 export function calculateTotalMaintenanceCost(logs: MaintenanceLog[]): number {

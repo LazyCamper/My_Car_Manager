@@ -18,6 +18,7 @@ export const MaintenancePage: React.FC = () => {
     activeVehicle,
     isLoading: isVehicleLoading,
     selectVehicle,
+    saveVehicle,
   } = useActiveVehicle();
   const { maintenanceRepo } = useRepositories();
 
@@ -63,6 +64,15 @@ export const MaintenancePage: React.FC = () => {
   const handleSaveLog = async (data: MaintenanceFormSubmitData) => {
     await maintenanceRepo.save(data);
     if (activeVehicle) {
+      if (
+        typeof data.mileage === 'number' &&
+        data.mileage > activeVehicle.currentMileage
+      ) {
+        await saveVehicle({
+          ...activeVehicle,
+          currentMileage: data.mileage,
+        });
+      }
       await loadLogs(activeVehicle.id);
     }
   };

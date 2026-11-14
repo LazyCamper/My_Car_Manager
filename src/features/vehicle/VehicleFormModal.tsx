@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Vehicle, VehicleInput } from '../../domain/models';
-import { useModalViewport } from '../../shared/utils';
+import {
+  formatDateDot,
+  parseDateString,
+  useModalViewport,
+} from '../../shared/utils';
 
 export interface VehicleFormModalProps {
   isOpen: boolean;
@@ -25,6 +29,26 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
   const [manufacturerModel, setManufacturerModel] = useState('');
   const [modelYear, setModelYear] = useState(String(currentYear));
   const [currentMileage, setCurrentMileage] = useState('0');
+
+  const [registrationDate, setRegistrationDate] = useState('');
+  const [purchaseDate, setPurchaseDate] = useState('');
+  const [purchaseMileage, setPurchaseMileage] = useState('');
+  const [purchasePrice, setPurchasePrice] = useState('');
+  const [vin, setVin] = useState('');
+  const [tireSize, setTireSize] = useState('');
+  const [vehiclePrice, setVehiclePrice] = useState('');
+  const [engineSpec, setEngineSpec] = useState('');
+  const [performanceSpec, setPerformanceSpec] = useState('');
+  const [transmission, setTransmission] = useState('');
+  const [fuelSpec, setFuelSpec] = useState('');
+  const [dimensionSpec, setDimensionSpec] = useState('');
+  const [consumablesSpec, setConsumablesSpec] = useState('');
+  const [colorSpec, setColorSpec] = useState('');
+  const [options, setOptions] = useState('');
+  const [tinting, setTinting] = useState('');
+  const [memo, setMemo] = useState('');
+  const [isSpecsExpanded, setIsSpecsExpanded] = useState(false);
+
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -40,12 +64,80 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
       setManufacturerModel(initialVehicle.manufacturerModel);
       setModelYear(String(initialVehicle.modelYear));
       setCurrentMileage(String(initialVehicle.currentMileage));
+      setRegistrationDate(initialVehicle.registrationDate ?? '');
+      setPurchaseDate(initialVehicle.purchaseDate ?? '');
+      setPurchaseMileage(
+        typeof initialVehicle.purchaseMileage === 'number'
+          ? String(initialVehicle.purchaseMileage)
+          : '',
+      );
+      setPurchasePrice(
+        typeof initialVehicle.purchasePrice === 'number'
+          ? String(initialVehicle.purchasePrice)
+          : '',
+      );
+      setVin(initialVehicle.vin ?? '');
+      setTireSize(initialVehicle.tireSize ?? '');
+      setVehiclePrice(
+        typeof initialVehicle.vehiclePrice === 'number'
+          ? String(initialVehicle.vehiclePrice)
+          : '',
+      );
+      setEngineSpec(initialVehicle.engineSpec ?? '');
+      setPerformanceSpec(initialVehicle.performanceSpec ?? '');
+      setTransmission(initialVehicle.transmission ?? '');
+      setFuelSpec(initialVehicle.fuelSpec ?? '');
+      setDimensionSpec(initialVehicle.dimensionSpec ?? '');
+      setConsumablesSpec(initialVehicle.consumablesSpec ?? '');
+      setColorSpec(initialVehicle.colorSpec ?? '');
+      setOptions(initialVehicle.options ?? '');
+      setTinting(initialVehicle.tinting ?? '');
+      setMemo(initialVehicle.memo ?? '');
+      setIsSpecsExpanded(
+        Boolean(
+          initialVehicle.registrationDate ||
+            initialVehicle.purchaseDate ||
+            initialVehicle.purchaseMileage ||
+            initialVehicle.purchasePrice ||
+            initialVehicle.vin ||
+            initialVehicle.tireSize ||
+            initialVehicle.vehiclePrice ||
+            initialVehicle.engineSpec ||
+            initialVehicle.performanceSpec ||
+            initialVehicle.transmission ||
+            initialVehicle.fuelSpec ||
+            initialVehicle.dimensionSpec ||
+            initialVehicle.consumablesSpec ||
+            initialVehicle.colorSpec ||
+            initialVehicle.options ||
+            initialVehicle.tinting ||
+            initialVehicle.memo,
+        ),
+      );
     } else {
       setName('');
       setPlateNumber('');
       setManufacturerModel('');
       setModelYear(String(currentYear));
       setCurrentMileage('');
+      setRegistrationDate('');
+      setPurchaseDate('');
+      setPurchaseMileage('');
+      setPurchasePrice('');
+      setVin('');
+      setTireSize('');
+      setVehiclePrice('');
+      setEngineSpec('');
+      setPerformanceSpec('');
+      setTransmission('');
+      setFuelSpec('');
+      setDimensionSpec('');
+      setConsumablesSpec('');
+      setColorSpec('');
+      setOptions('');
+      setTinting('');
+      setMemo('');
+      setIsSpecsExpanded(false);
     }
   }, [isOpen, initialVehicle, currentYear]);
 
@@ -88,6 +180,60 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
       return;
     }
 
+    let formattedRegDate: string | undefined;
+    if (registrationDate.trim()) {
+      try {
+        formattedRegDate = formatDateDot(
+          parseDateString(registrationDate.trim()),
+        );
+      } catch {
+        setErrorMessage('최초 등록일은 YYYY.MM.DD 형식으로 입력해 주세요.');
+        return;
+      }
+    }
+
+    let formattedPurchaseDate: string | undefined;
+    if (purchaseDate.trim()) {
+      try {
+        formattedPurchaseDate = formatDateDot(
+          parseDateString(purchaseDate.trim()),
+        );
+      } catch {
+        setErrorMessage('구매(인수)일은 YYYY.MM.DD 형식으로 입력해 주세요.');
+        return;
+      }
+    }
+
+    let parsedPurchaseMileage: number | undefined;
+    if (purchaseMileage.trim()) {
+      const numMileage = Number(purchaseMileage.replace(/,/g, '').trim());
+      if (!Number.isFinite(numMileage) || numMileage < 0) {
+        setErrorMessage('구매(인수) 주행거리는 0 이상의 숫자로 입력해 주세요.');
+        return;
+      }
+      parsedPurchaseMileage = Math.round(numMileage);
+    }
+
+    let parsedPurchasePrice: number | undefined;
+    if (purchasePrice.trim()) {
+      const numPurchasePrice = Number(purchasePrice.replace(/,/g, '').trim());
+      if (!Number.isFinite(numPurchasePrice) || numPurchasePrice < 0) {
+        setErrorMessage('실구매가는 0원 이상의 숫자로 입력해 주세요.');
+        return;
+      }
+      parsedPurchasePrice = Math.round(numPurchasePrice);
+    }
+
+    let parsedPrice: number | undefined;
+    if (vehiclePrice.trim()) {
+      const numPrice = Number(vehiclePrice.replace(/,/g, '').trim());
+      if (!Number.isFinite(numPrice) || numPrice < 0) {
+        setErrorMessage('차량가는 0원 이상의 숫자로 입력해 주세요.');
+        return;
+      }
+      parsedPrice = Math.round(numPrice);
+    }
+
     setIsSubmitting(true);
     try {
       await onSubmit({
@@ -97,6 +243,23 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
         manufacturerModel: trimmedModel,
         modelYear: parsedYear,
         currentMileage: Math.round(parsedMileage),
+        registrationDate: formattedRegDate,
+        purchaseDate: formattedPurchaseDate,
+        purchaseMileage: parsedPurchaseMileage,
+        purchasePrice: parsedPurchasePrice,
+        vin: vin.trim() || undefined,
+        tireSize: tireSize.trim() || undefined,
+        vehiclePrice: parsedPrice,
+        engineSpec: engineSpec.trim() || undefined,
+        performanceSpec: performanceSpec.trim() || undefined,
+        transmission: transmission.trim() || undefined,
+        fuelSpec: fuelSpec.trim() || undefined,
+        dimensionSpec: dimensionSpec.trim() || undefined,
+        consumablesSpec: consumablesSpec.trim() || undefined,
+        colorSpec: colorSpec.trim() || undefined,
+        options: options.trim() || undefined,
+        tinting: tinting.trim() || undefined,
+        memo: memo.trim() || undefined,
       });
       onClose();
     } catch (err) {
@@ -232,6 +395,285 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
               />
             </div>
           </div>
+
+          <div className="vehicle-specs-toggle-box">
+            <button
+              type="button"
+              className="btn btn-secondary touch-target vehicle-specs-toggle-btn"
+              onClick={() => setIsSpecsExpanded((prev) => !prev)}
+              aria-expanded={isSpecsExpanded}
+            >
+              {isSpecsExpanded
+                ? '▲ 제원 · 옵션 · 틴팅 상세 입력 접기'
+                : '▼ 제원 · 옵션 · 틴팅 상세 입력 (선택)'}
+            </button>
+          </div>
+
+          {isSpecsExpanded && (
+            <div
+              className="vehicle-specs-form-section"
+              data-testid="vehicle-specs-form-section"
+            >
+              <div className="form-row-2col">
+                <div className="form-field">
+                  <label htmlFor="vehicle-reg-date" className="form-label">
+                    최초 등록일
+                  </label>
+                  <input
+                    id="vehicle-reg-date"
+                    type="text"
+                    inputMode="numeric"
+                    className="form-input touch-target"
+                    placeholder="예: 2023.05.26"
+                    value={registrationDate}
+                    onChange={(e) => setRegistrationDate(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-field">
+                  <label htmlFor="vehicle-price" className="form-label">
+                    출고 차량가 (원)
+                  </label>
+                  <input
+                    id="vehicle-price"
+                    type="number"
+                    inputMode="numeric"
+                    className="form-input touch-target"
+                    placeholder="예: 57700000"
+                    value={vehiclePrice}
+                    onChange={(e) => setVehiclePrice(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="form-row-2col">
+                <div className="form-field">
+                  <label htmlFor="vehicle-purchase-date" className="form-label">
+                    구매(인수)일
+                  </label>
+                  <input
+                    id="vehicle-purchase-date"
+                    type="text"
+                    inputMode="numeric"
+                    className="form-input touch-target"
+                    placeholder="예: 2025.08.14"
+                    value={purchaseDate}
+                    onChange={(e) => setPurchaseDate(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-field">
+                  <label
+                    htmlFor="vehicle-purchase-mileage"
+                    className="form-label"
+                  >
+                    인수 당시 주행거리 (km)
+                  </label>
+                  <input
+                    id="vehicle-purchase-mileage"
+                    type="number"
+                    inputMode="numeric"
+                    className="form-input touch-target"
+                    placeholder="예: 56200"
+                    value={purchaseMileage}
+                    onChange={(e) => setPurchaseMileage(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="form-row-2col">
+                <div className="form-field">
+                  <label
+                    htmlFor="vehicle-purchase-price"
+                    className="form-label"
+                  >
+                    실구매가 (원)
+                  </label>
+                  <input
+                    id="vehicle-purchase-price"
+                    type="number"
+                    inputMode="numeric"
+                    className="form-input touch-target"
+                    placeholder="예: 50000000"
+                    value={purchasePrice}
+                    onChange={(e) => setPurchasePrice(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-field">
+                  <label htmlFor="vehicle-color" className="form-label">
+                    외장 색상 · 컬러코드
+                  </label>
+                  <input
+                    id="vehicle-color"
+                    type="text"
+                    className="form-input touch-target"
+                    placeholder="예: 망가니즈루스터 (도요타 1K2)"
+                    value={colorSpec}
+                    onChange={(e) => setColorSpec(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="form-row-2col">
+                <div className="form-field">
+                  <label htmlFor="vehicle-vin" className="form-label">
+                    차대번호 (VIN)
+                  </label>
+                  <input
+                    id="vehicle-vin"
+                    type="text"
+                    className="form-input touch-target"
+                    placeholder="예: WBA31FU07PFP40365"
+                    value={vin}
+                    onChange={(e) => setVin(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-field">
+                  <label htmlFor="vehicle-tire" className="form-label">
+                    타이어 규격 · 공기압
+                  </label>
+                  <input
+                    id="vehicle-tire"
+                    type="text"
+                    className="form-input touch-target"
+                    placeholder="예: 245/45R20 (39psi)"
+                    value={tireSize}
+                    onChange={(e) => setTireSize(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="vehicle-engine" className="form-label">
+                  엔진 제원
+                </label>
+                <input
+                  id="vehicle-engine"
+                  type="text"
+                  className="form-input touch-target"
+                  placeholder="예: B47 1,995cc / 트윈터보 직렬 4기통 디젤"
+                  value={engineSpec}
+                  onChange={(e) => setEngineSpec(e.target.value)}
+                />
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="vehicle-perf" className="form-label">
+                  출력 · 토크 · 제로백
+                </label>
+                <input
+                  id="vehicle-perf"
+                  type="text"
+                  className="form-input touch-target"
+                  placeholder="예: 190마력, 40.8토크(1750~2500RPM) · 제로백 6.9초"
+                  value={performanceSpec}
+                  onChange={(e) => setPerformanceSpec(e.target.value)}
+                />
+              </div>
+
+              <div className="form-row-2col">
+                <div className="form-field">
+                  <label htmlFor="vehicle-transmission" className="form-label">
+                    변속기
+                  </label>
+                  <input
+                    id="vehicle-transmission"
+                    type="text"
+                    className="form-input touch-target"
+                    placeholder="예: 스텝트로닉 스포츠 자동 8단"
+                    value={transmission}
+                    onChange={(e) => setTransmission(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-field">
+                  <label htmlFor="vehicle-fuel" className="form-label">
+                    연료탱크 · 복합연비
+                  </label>
+                  <input
+                    id="vehicle-fuel"
+                    type="text"
+                    className="form-input touch-target"
+                    placeholder="예: 59L · 복합연비 15.0km/L"
+                    value={fuelSpec}
+                    onChange={(e) => setFuelSpec(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="vehicle-dimension" className="form-label">
+                  차체 치수 · 공차중량
+                </label>
+                <input
+                  id="vehicle-dimension"
+                  type="text"
+                  className="form-input touch-target"
+                  placeholder="예: 전장/전폭 5235/1900mm · 축거 3125mm · 공차중량 2330kg"
+                  value={dimensionSpec}
+                  onChange={(e) => setDimensionSpec(e.target.value)}
+                />
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="vehicle-consumables" className="form-label">
+                  소모품 사이즈 규격 (에어컨필터 등)
+                </label>
+                <input
+                  id="vehicle-consumables"
+                  type="text"
+                  className="form-input touch-target"
+                  placeholder="예: 에어컨필터 사이즈 245 * 178 * 28"
+                  value={consumablesSpec}
+                  onChange={(e) => setConsumablesSpec(e.target.value)}
+                />
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="vehicle-options" className="form-label">
+                  장착 옵션 · 시공 내역
+                </label>
+                <input
+                  id="vehicle-options"
+                  type="text"
+                  className="form-input touch-target"
+                  placeholder="예: Car eye 3.0 블랙박스, 신차 유리막, 생활ppf, 하이패스"
+                  value={options}
+                  onChange={(e) => setOptions(e.target.value)}
+                />
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="vehicle-tinting" className="form-label">
+                  틴팅 (썬팅)
+                </label>
+                <input
+                  id="vehicle-tinting"
+                  type="text"
+                  className="form-input touch-target"
+                  placeholder="예: 레이노 S9 전면 45%, 측후면 35%"
+                  value={tinting}
+                  onChange={(e) => setTinting(e.target.value)}
+                />
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="vehicle-memo" className="form-label">
+                  차량 관리 메모 (내비게이션 계정 · 비밀번호 · 쿠폰 잔여 등)
+                </label>
+                <textarea
+                  id="vehicle-memo"
+                  rows={3}
+                  className="form-input"
+                  placeholder="내비 업데이트 아이디/비밀번호, 잔여 쿠폰 등을 직접 입력해 두세요"
+                  value={memo}
+                  onChange={(e) => setMemo(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
 
           {isEditMode && onDelete && isConfirmingDelete ? (
             <div

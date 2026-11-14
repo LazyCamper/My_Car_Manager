@@ -13,23 +13,43 @@ export interface DdayResult {
 }
 
 /**
- * 'YYYY.MM.DD', 'YYYY-MM-DD', 또는 8자리 숫자 'YYYYMMDD' 형식의 문자열을
+ * 'YYYY.MM.DD', 'YYYY-MM-DD', 'YY.M.D', 'YYYYMMDD', 'YYMMDD', 'YYYY.MM', 'YY년 M월(D일)' 형식의 문자열을
  * 로컬 자정(00:00:00) Date 객체로 변환합니다.
- * - 연도는 반드시 4자리(1900~2100)여야 합니다.
+ * - 2자리 연도(예: '23.11.22', '200223')는 2000년대(20YY)로 자동 보정합니다.
+ * - 일(day)이 생략된 연·월 표기(예: '2021.01', '21년1월')는 해당 월 1일로 보정합니다.
  */
 export function parseDateString(dateStr: string): Date {
   const trimmed = dateStr.trim();
-  const compactMatch = /^(\d{4})(\d{2})(\d{2})$/.exec(trimmed);
-  const normalized = compactMatch
-    ? `${compactMatch[1]}.${compactMatch[2]}.${compactMatch[3]}`
-    : trimmed.replace(/-/g, '.');
+  const compact8Match = /^(\d{4})(\d{2})(\d{2})$/.exec(trimmed);
+  const compact6Match = /^(\d{2})(\d{2})(\d{2})$/.exec(trimmed);
+  const koreanYmdMatch =
+    /^(\d{2}|\d{4})\s*년\s*(\d{1,2})\s*월(?:\s*(\d{1,2})\s*일?)?$/.exec(
+      trimmed,
+    );
 
-  if (!/^\d{4}\.\d{1,2}\.\d{1,2}$/.test(normalized)) {
+  let normalized: string;
+  if (compact8Match) {
+    normalized = `${compact8Match[1]}.${compact8Match[2]}.${compact8Match[3]}`;
+  } else if (compact6Match) {
+    normalized = `20${compact6Match[1]}.${compact6Match[2]}.${compact6Match[3]}`;
+  } else if (koreanYmdMatch) {
+    normalized = `${koreanYmdMatch[1]}.${koreanYmdMatch[2]}.${koreanYmdMatch[3] ?? '01'}`;
+  } else {
+    const dotReplaced = trimmed.replace(/-/g, '.');
+    if (/^(\d{2}|\d{4})\.\d{1,2}$/.test(dotReplaced)) {
+      normalized = `${dotReplaced}.01`;
+    } else {
+      normalized = dotReplaced;
+    }
+  }
+
+  if (!/^(\d{2}|\d{4})\.\d{1,2}\.\d{1,2}$/.test(normalized)) {
     throw new Error(`Invalid date format: ${dateStr}. Expected YYYY.MM.DD`);
   }
 
   const parts = normalized.split('.');
-  const year = Number(parts[0]);
+  const rawYear = Number(parts[0]);
+  const year = parts[0].length === 2 ? 2000 + rawYear : rawYear;
   const month = Number(parts[1]);
   const day = Number(parts[2]);
 

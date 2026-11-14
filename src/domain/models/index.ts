@@ -9,6 +9,23 @@ export interface Vehicle {
   manufacturerModel: string; // 제조사/모델
   modelYear: number; // 연식
   currentMileage: number; // 현재 주행거리 (km)
+  registrationDate?: string; // 최초 등록일 (YYYY.MM.DD)
+  purchaseDate?: string; // 구매/인수일 (YYYY.MM.DD)
+  purchaseMileage?: number; // 구매/인수 당시 주행거리 (km)
+  purchasePrice?: number; // 실구매가 (원)
+  vin?: string; // 차대번호
+  engineSpec?: string; // 엔진 제원
+  performanceSpec?: string; // 출력/토크/제로백 등 성능 제원
+  fuelSpec?: string; // 연료탱크 및 복합연비
+  transmission?: string; // 변속기
+  tireSize?: string; // 타이어 규격 및 권장 공기압
+  dimensionSpec?: string; // 전장/전폭/전고/축거/윤거/공차중량
+  consumablesSpec?: string; // 에어컨필터 등 소모품 사이즈 규격
+  colorSpec?: string; // 외장 색상 및 도장 컬러코드
+  vehiclePrice?: number; // 출고 차량가 (원)
+  options?: string; // 장착 옵션 (블랙박스, 유리막, PPF, 하이패스 등)
+  tinting?: string; // 틴팅 시공 내역
+  memo?: string; // 차량 관리 메모 (내비게이션 계정, 쿠폰 잔여 등)
   displayOrder: number;
   createdAt: string;
   updatedAt: string;
@@ -21,6 +38,23 @@ export type VehicleInput = {
   manufacturerModel: string;
   modelYear: number;
   currentMileage: number;
+  registrationDate?: string;
+  purchaseDate?: string;
+  purchaseMileage?: number;
+  purchasePrice?: number;
+  vin?: string;
+  engineSpec?: string;
+  performanceSpec?: string;
+  fuelSpec?: string;
+  transmission?: string;
+  tireSize?: string;
+  dimensionSpec?: string;
+  consumablesSpec?: string;
+  colorSpec?: string;
+  vehiclePrice?: number;
+  options?: string;
+  tinting?: string;
+  memo?: string;
   displayOrder?: number;
 };
 
@@ -30,14 +64,18 @@ export type MaintenanceCategory =
   | 'brake'
   | 'battery'
   | 'filter'
+  | 'repair'
+  | 'accident_repair'
+  | 'camper_as'
   | 'other';
 
 export interface MaintenanceLog {
   id: string;
   vehicleId: string;
   date: string; // YYYY.MM.DD
-  mileage: number;
+  mileage?: number; // 주행거리 미기재(사고 수리 등) 허용
   category: MaintenanceCategory;
+  categories?: MaintenanceCategory[]; // 복수 카테고리 태그 지원
   title: string;
   shopName?: string;
   cost: number;

@@ -3,3 +3,6 @@ dist
 dist-ssr
 *.local
 .DS_Store
+my-cars-backup.json
+my-car-backup-*.json
+

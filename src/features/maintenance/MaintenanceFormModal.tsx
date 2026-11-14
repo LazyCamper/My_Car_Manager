@@ -10,7 +10,7 @@ import {
   parseDateString,
   useModalViewport,
 } from '../../shared/utils';
-import { MAINTENANCE_CATEGORY_OPTIONS } from './constants';
+import { getLogCategories, MAINTENANCE_CATEGORY_OPTIONS } from './constants';
 
 export type MaintenanceFormSubmitData = Omit<
   MaintenanceLog,
@@ -44,6 +44,9 @@ export const MaintenanceFormModal: React.FC<MaintenanceFormModalProps> = ({
   const [date, setDate] = useState('');
   const [mileage, setMileage] = useState('');
   const [category, setCategory] = useState<MaintenanceCategory>('engine_oil');
+  const [selectedCategories, setSelectedCategories] = useState<
+    MaintenanceCategory[]
+  >(['engine_oil']);
   const [customTitle, setCustomTitle] = useState('엔진오일 교체');
   const [cost, setCost] = useState('');
   const [shopName, setShopName] = useState('');
@@ -66,8 +69,13 @@ export const MaintenanceFormModal: React.FC<MaintenanceFormModalProps> = ({
 
     if (initialLog) {
       setDate(initialLog.date);
-      setMileage(String(initialLog.mileage));
+      setMileage(
+        typeof initialLog.mileage === 'number'
+          ? String(initialLog.mileage)
+          : '',
+      );
       setCategory(initialLog.category);
+      setSelectedCategories(getLogCategories(initialLog));
       setCustomTitle(initialLog.title);
       setCost(String(initialLog.cost));
       setShopName(initialLog.shopName ?? '');
@@ -99,6 +107,7 @@ export const MaintenanceFormModal: React.FC<MaintenanceFormModalProps> = ({
       setDate(formatDateDot(new Date()));
       setMileage(defaultMileage > 0 ? String(defaultMileage) : '');
       setCategory('engine_oil');
+      setSelectedCategories(['engine_oil']);
       setCustomTitle('엔진오일 교체');
       setCost('');
       setShopName('');
@@ -119,12 +128,30 @@ export const MaintenanceFormModal: React.FC<MaintenanceFormModalProps> = ({
 
   const handleCategoryChange = (nextCategory: MaintenanceCategory) => {
     setCategory(nextCategory);
+    setSelectedCategories((prev) =>
+      prev.length <= 1 ? [nextCategory] : Array.from(new Set([nextCategory, ...prev])),
+    );
     const option = MAINTENANCE_CATEGORY_OPTIONS.find(
       (item) => item.value === nextCategory,
     );
     if (option) {
       setCustomTitle(option.defaultTitle);
     }
+  };
+
+  const handleToggleExtraCategory = (targetCat: MaintenanceCategory) => {
+    setSelectedCategories((prev) => {
+      const exists = prev.includes(targetCat);
+      if (exists) {
+        if (prev.length === 1) return prev; // 최소 1개 유지
+        const next = prev.filter((c) => c !== targetCat);
+        if (category === targetCat) {
+          setCategory(next[0]);
+        }
+        return next;
+      }
+      return [...prev, targetCat];
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -145,24 +172,24 @@ export const MaintenanceFormModal: React.FC<MaintenanceFormModalProps> = ({
       return;
     }
 
-    if (mileage.trim() === '') {
-      setErrorMessage('주행거리를 입력해 주세요.');
-      return;
-    }
-    const parsedMileage = Number(mileage);
-    if (!Number.isFinite(parsedMileage) || parsedMileage < 0) {
-      setErrorMessage('주행거리는 0 이상의 숫자로 입력해 주세요.');
-      return;
+    let finalMileage: number | undefined;
+    if (mileage.trim() !== '') {
+      const parsedMileage = Number(mileage);
+      if (!Number.isFinite(parsedMileage) || parsedMileage < 0) {
+        setErrorMessage('주행거리는 0 이상의 숫자로 입력해 주세요.');
+        return;
+      }
+      finalMileage = Math.round(parsedMileage);
     }
 
-    if (cost.trim() === '') {
-      setErrorMessage('정비 비용을 입력해 주세요.');
-      return;
-    }
-    const parsedCost = Number(cost);
-    if (!Number.isFinite(parsedCost) || parsedCost < 0) {
-      setErrorMessage('비용은 0원 이상의 숫자로 입력해 주세요.');
-      return;
+    let finalCost = 0;
+    if (cost.trim() !== '') {
+      const parsedCost = Number(cost);
+      if (!Number.isFinite(parsedCost) || parsedCost < 0) {
+        setErrorMessage('비용은 0원 이상의 숫자로 입력해 주세요.');
+        return;
+      }
+      finalCost = Math.round(parsedCost);
     }
 
     const option = MAINTENANCE_CATEGORY_OPTIONS.find(
@@ -215,14 +242,18 @@ export const MaintenanceFormModal: React.FC<MaintenanceFormModalProps> = ({
         }
       }
 
+      const finalCategories =
+        selectedCategories.length > 0 ? selectedCategories : [category];
+
       await onSubmit({
         id: initialLog?.id,
         vehicleId,
         date: formattedDate,
-        mileage: Math.round(parsedMileage),
-        category,
+        mileage: finalMileage,
+        category: finalCategories[0],
+        categories: finalCategories,
         title: resolvedTitle,
-        cost: Math.round(parsedCost),
+        cost: finalCost,
         shopName: shopName.trim() || undefined,
         memo: memo.trim() || undefined,
         nextDueDate: formattedNextDueDate,
@@ -305,7 +336,7 @@ export const MaintenanceFormModal: React.FC<MaintenanceFormModalProps> = ({
                 type="text"
                 inputMode="numeric"
                 className="form-input touch-target"
-                placeholder="YYYY.MM.DD"
+                placeholder="예: 2026.05.12 또는 26.5.12"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 required
@@ -314,17 +345,16 @@ export const MaintenanceFormModal: React.FC<MaintenanceFormModalProps> = ({
 
             <div className="form-field">
               <label htmlFor="maint-mileage" className="form-label">
-                주행거리 (km) <span className="required-mark">*</span>
+                주행거리 (km) · 선택
               </label>
               <input
                 id="maint-mileage"
                 type="number"
                 inputMode="numeric"
                 className="form-input touch-target"
-                placeholder="예: 45000"
+                placeholder="미입력 시 생략"
                 value={mileage}
                 onChange={(e) => setMileage(e.target.value)}
-                required
               />
             </div>
           </div>
@@ -347,6 +377,26 @@ export const MaintenanceFormModal: React.FC<MaintenanceFormModalProps> = ({
                 </option>
               ))}
             </select>
+            <div
+              className="multi-category-chip-group"
+              role="group"
+              aria-label="복수 정비 항목 태그 선택"
+            >
+              {MAINTENANCE_CATEGORY_OPTIONS.map((opt) => {
+                const isSelected = selectedCategories.includes(opt.value);
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    className={`filter-chip${isSelected ? ' active' : ''}`}
+                    onClick={() => handleToggleExtraCategory(opt.value)}
+                    aria-pressed={isSelected}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div className="form-field">
@@ -368,17 +418,16 @@ export const MaintenanceFormModal: React.FC<MaintenanceFormModalProps> = ({
           <div className="form-row-2col">
             <div className="form-field">
               <label htmlFor="maint-cost" className="form-label">
-                비용 (원) <span className="required-mark">*</span>
+                비용 (원) · 미입력 시 0원
               </label>
               <input
                 id="maint-cost"
                 type="number"
                 inputMode="numeric"
                 className="form-input touch-target"
-                placeholder="예: 85000"
+                placeholder="보증/보험 수리 시 비워두세요"
                 value={cost}
                 onChange={(e) => setCost(e.target.value)}
-                required
               />
             </div>
 
@@ -390,7 +439,7 @@ export const MaintenanceFormModal: React.FC<MaintenanceFormModalProps> = ({
                 id="maint-shop"
                 type="text"
                 className="form-input touch-target"
-                placeholder="예: 블루핸즈 강남점"
+                placeholder="예: 구미서비스센터"
                 value={shopName}
                 onChange={(e) => setShopName(e.target.value)}
               />

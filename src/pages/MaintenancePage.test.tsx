@@ -413,4 +413,82 @@ describe('정비 내역 화면 (MaintenancePage) 통합 테스트', () => {
       expect(screen.getByText('📷 1장')).toBeInTheDocument();
     });
   });
+
+  it('복수 카테고리 태그 필터링과 축약 날짜(26.3.12), 주행거리·비용 미입력 저장이 정상 동작한다', async () => {
+    const repos = createMaintenanceTestRepositories({
+      vehicles: [DEFAULT_VEHICLE],
+      logs: [
+        {
+          id: 'maint-multi',
+          vehicleId: 'v-1',
+          date: '2026.05.12',
+          mileage: 50748,
+          category: 'engine_oil',
+          categories: ['engine_oil', 'filter'],
+          title: '엔진오일, 에어필터, 연료필터, 에어컨필터 교환',
+          cost: 0,
+          shopName: '구미서비스센터',
+          attachmentIds: [],
+          createdAt: '2026-05-12T09:00:00.000Z',
+        },
+      ],
+    });
+
+    render(
+      <RepositoryProvider repositories={repos}>
+        <ActiveVehicleProvider>
+          <MemoryRouter initialEntries={['/maintenance']}>
+            <AppRoutes />
+          </MemoryRouter>
+        </ActiveVehicleProvider>
+      </RepositoryProvider>,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByText('엔진오일, 에어필터, 연료필터, 에어컨필터 교환'),
+      ).toBeInTheDocument();
+    });
+
+    // '엔진오일' 필터와 '에어컨·필터' 필터 양쪽 모두에서 조회됨
+    fireEvent.click(screen.getByRole('button', { name: '엔진오일' }));
+    expect(
+      screen.getByText('엔진오일, 에어필터, 연료필터, 에어컨필터 교환'),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '에어컨·필터' }));
+    expect(
+      screen.getByText('엔진오일, 에어필터, 연료필터, 에어컨필터 교환'),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '전체' }));
+
+    // 새 정비 등록: 축약 날짜(26.3.12) + 주행거리 비움 + 비용 비움
+    fireEvent.click(screen.getByRole('button', { name: '+ 정비 등록' }));
+    fireEvent.change(screen.getByLabelText(/정비 날짜/), {
+      target: { value: '26.3.12' },
+    });
+    fireEvent.change(screen.getByLabelText(/주행거리/), {
+      target: { value: '' },
+    });
+    fireEvent.change(screen.getByLabelText(/정비 항목 분류/), {
+      target: { value: 'accident_repair' },
+    });
+    fireEvent.change(screen.getByLabelText(/정비 항목 상세명/), {
+      target: { value: '앞범퍼, 운전석 앞휀더, 앞바퀴휠 교체' },
+    });
+    fireEvent.change(screen.getByLabelText(/비용 \(원\)/), {
+      target: { value: '' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: '정비 등록' }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText('앞범퍼, 운전석 앞휀더, 앞바퀴휠 교체'),
+      ).toBeInTheDocument();
+    });
+    expect(screen.getByText('2026.03.12')).toBeInTheDocument();
+    expect(screen.getByText(/주행거리 미기재/)).toBeInTheDocument();
+  });
 });
