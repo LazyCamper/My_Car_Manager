@@ -32,7 +32,8 @@ function createTestRepositories(initial?: {
 
   return {
     vehicleRepo: {
-      getAll: async () => [...vehicles],
+      getAll: async () =>
+        [...vehicles].sort((a, b) => a.displayOrder - b.displayOrder),
       getById: async (id) => vehicles.find((v) => v.id === id),
       save: async (input) => {
         if (input.id) {
@@ -314,10 +315,8 @@ describe('홈 화면 및 차량 등록/수정/전환 통합 테스트', () => {
     expect(listItems[1]).toHaveTextContent('D-12');
     expect(listItems[1]).toHaveTextContent('30일 이내 임박');
 
-    // 두 번째 차량(아반떼)으로 전환
-    fireEvent.change(screen.getByLabelText('관리 차량 선택'), {
-      target: { value: 'v-2' },
-    });
+    // 두 번째 차량(아반떼) 카드를 클릭하여 전환
+    fireEvent.click(screen.getByText(/현대 아반떼 · 2021년식/));
 
     await waitFor(() => {
       expect(
@@ -325,6 +324,17 @@ describe('홈 화면 및 차량 등록/수정/전환 통합 테스트', () => {
       ).toBeInTheDocument();
     });
     expect(screen.getByText('D-60')).toBeInTheDocument();
+
+    // 차량 카드 순서 변경 (아반떼 위로 이동)
+    fireEvent.click(screen.getByRole('button', { name: '아반떼 위로 이동' }));
+
+    await waitFor(() => {
+      const cards = screen
+        .getByTestId('owned-vehicles-list')
+        .querySelectorAll('.owned-vehicle-card');
+      expect(cards[0]).toHaveAttribute('data-testid', 'vehicle-card-v-2');
+      expect(cards[1]).toHaveAttribute('data-testid', 'vehicle-card-v-1');
+    });
   });
 
   it('차량 상세 제원(차대번호, 인수 후 주행거리, 소모품 규격, 관리 메모)을 조회하고 메모를 수정할 수 있다', async () => {

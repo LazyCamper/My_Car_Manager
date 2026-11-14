@@ -18,6 +18,8 @@ export interface ActiveVehicleContextValue {
   selectVehicle: (vehicleId: string) => Promise<void>;
   saveVehicle: (input: VehicleInput) => Promise<Vehicle>;
   deleteVehicle: (vehicleId: string) => Promise<void>;
+  moveVehicle: (vehicleId: string, direction: 'up' | 'down') => Promise<void>;
+  reorderVehicles: (fromIndex: number, toIndex: number) => Promise<void>;
   refreshVehicles: () => Promise<void>;
 }
 
@@ -95,6 +97,55 @@ export const ActiveVehicleProvider: React.FC<{ children: React.ReactNode }> = ({
     [vehicleRepo, appMetaRepo],
   );
 
+  const reorderVehicles = useCallback(
+    async (fromIndex: number, toIndex: number): Promise<void> => {
+      if (
+        fromIndex === toIndex ||
+        fromIndex < 0 ||
+        toIndex < 0 ||
+        fromIndex >= vehicles.length ||
+        toIndex >= vehicles.length
+      ) {
+        return;
+      }
+
+      const nextList = [...vehicles];
+      const [moved] = nextList.splice(fromIndex, 1);
+      nextList.splice(toIndex, 0, moved);
+
+      const updatedVehicles = nextList.map((v, idx) => ({
+        ...v,
+        displayOrder: idx,
+      }));
+      setVehicles(updatedVehicles);
+
+      await Promise.all(
+        updatedVehicles.map((v) =>
+          vehicleRepo.save({
+            ...v,
+            displayOrder: v.displayOrder,
+          }),
+        ),
+      );
+      const refreshed = await vehicleRepo.getAll();
+      setVehicles(
+        [...refreshed].sort((a, b) => a.displayOrder - b.displayOrder),
+      );
+    },
+    [vehicles, vehicleRepo],
+  );
+
+  const moveVehicle = useCallback(
+    async (vehicleId: string, direction: 'up' | 'down'): Promise<void> => {
+      const currentIndex = vehicles.findIndex((v) => v.id === vehicleId);
+      if (currentIndex < 0) return;
+      const targetIndex =
+        direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+      await reorderVehicles(currentIndex, targetIndex);
+    },
+    [vehicles, reorderVehicles],
+  );
+
   const activeVehicle =
     vehicles.find((v) => v.id === activeVehicleId) ?? vehicles[0] ?? null;
 
@@ -108,6 +159,8 @@ export const ActiveVehicleProvider: React.FC<{ children: React.ReactNode }> = ({
         selectVehicle,
         saveVehicle,
         deleteVehicle,
+        moveVehicle,
+        reorderVehicles,
         refreshVehicles: loadVehicles,
       }}
     >

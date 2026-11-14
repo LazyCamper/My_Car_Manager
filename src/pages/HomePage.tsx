@@ -21,6 +21,8 @@ export const HomePage: React.FC = () => {
     selectVehicle,
     saveVehicle,
     deleteVehicle,
+    moveVehicle,
+    reorderVehicles,
   } = useActiveVehicle();
   const { complianceRepo, maintenanceRepo, appMetaRepo } = useRepositories();
 
@@ -153,6 +155,10 @@ export const HomePage: React.FC = () => {
             onSelectVehicle={(id) => void selectVehicle(id)}
             onOpenAddModal={handleOpenAddModal}
             onOpenEditModal={handleOpenEditModal}
+            onMoveVehicle={(id, direction) => void moveVehicle(id, direction)}
+            onReorderVehicles={(fromIndex, toIndex) =>
+              void reorderVehicles(fromIndex, toIndex)
+            }
           />
 
           <UpcomingDueSection

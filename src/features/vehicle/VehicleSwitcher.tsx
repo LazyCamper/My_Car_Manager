@@ -8,6 +8,8 @@ export interface VehicleSwitcherProps {
   onSelectVehicle: (vehicleId: string) => void;
   onOpenAddModal: () => void;
   onOpenEditModal: (vehicle: Vehicle) => void;
+  onMoveVehicle?: (vehicleId: string, direction: 'up' | 'down') => void;
+  onReorderVehicles?: (fromIndex: number, toIndex: number) => void;
 }
 
 function hasVehicleDetailSpecs(v: Vehicle): boolean {
@@ -38,11 +40,15 @@ export const VehicleSwitcher: React.FC<VehicleSwitcherProps> = ({
   onSelectVehicle,
   onOpenAddModal,
   onOpenEditModal,
+  onMoveVehicle,
+  onReorderVehicles,
 }) => {
   const [expandedVehicleIds, setExpandedVehicleIds] = useState<
     Record<string, boolean>
   >({});
   const [copiedVinId, setCopiedVinId] = useState<string | null>(null);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   const toggleSpecOpen = (vehicleId: string) => {
     setExpandedVehicleIds((prev) => ({
@@ -64,47 +70,56 @@ export const VehicleSwitcher: React.FC<VehicleSwitcherProps> = ({
     }
   };
 
+  const handleDragStart = (index: number) => {
+    setDraggedIndex(index);
+  };
+
+  const handleDragOver = (
+    e: React.DragEvent<HTMLElement>,
+    index: number,
+  ) => {
+    e.preventDefault();
+    if (draggedIndex !== null && draggedIndex !== index) {
+      setDragOverIndex(index);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLElement>, toIndex: number) => {
+    e.preventDefault();
+    if (
+      draggedIndex !== null &&
+      draggedIndex !== toIndex &&
+      onReorderVehicles
+    ) {
+      onReorderVehicles(draggedIndex, toIndex);
+    }
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
   return (
     <section
       className="vehicle-header-card"
       aria-label="보유 차량 목록 및 선택"
     >
-      <div className="vehicle-switcher-bar">
-        <div className="vehicle-select-wrapper">
-          <label htmlFor="active-vehicle-select" className="sr-only">
-            관리 차량 선택
-          </label>
-          <select
-            id="active-vehicle-select"
-            aria-label="관리 차량 선택"
-            className="vehicle-select touch-target"
-            value={activeVehicle.id}
-            onChange={(e) => onSelectVehicle(e.target.value)}
-          >
-            {vehicles.map((v) => (
-              <option key={v.id} value={v.id}>
-                {v.name} ({v.plateNumber})
-              </option>
-            ))}
-          </select>
+      <div className="vehicle-section-topbar">
+        <div className="vehicle-section-heading">
+          <h2 className="section-title">보유 차량</h2>
+          <span className="section-count-badge">{vehicles.length}대</span>
         </div>
 
-        <div className="vehicle-switcher-actions">
-          <button
-            type="button"
-            className="btn btn-chip touch-target"
-            onClick={() => onOpenEditModal(activeVehicle)}
-          >
-            차량 수정
-          </button>
-          <button
-            type="button"
-            className="btn btn-chip-primary touch-target"
-            onClick={onOpenAddModal}
-          >
-            + 차량 추가
-          </button>
-        </div>
+        <button
+          type="button"
+          className="btn btn-chip-primary touch-target"
+          onClick={onOpenAddModal}
+        >
+          + 차량 추가
+        </button>
       </div>
 
       <div
@@ -112,10 +127,13 @@ export const VehicleSwitcher: React.FC<VehicleSwitcherProps> = ({
         data-testid="owned-vehicles-list"
         aria-label="보유 차량 전체 목록"
       >
-        {vehicles.map((vehicle) => {
+        {vehicles.map((vehicle, index) => {
           const isSelected = vehicle.id === activeVehicle.id;
           const isSpecOpen = Boolean(expandedVehicleIds[vehicle.id]);
           const showDetailToggle = hasVehicleDetailSpecs(vehicle);
+          const isFirst = index === 0;
+          const isLast = index === vehicles.length - 1;
+          const isDragOver = dragOverIndex === index;
           const drivenSincePurchase =
             typeof vehicle.purchaseMileage === 'number' &&
             vehicle.currentMileage >= vehicle.purchaseMileage
@@ -125,8 +143,13 @@ export const VehicleSwitcher: React.FC<VehicleSwitcherProps> = ({
           return (
             <article
               key={vehicle.id}
-              className={`owned-vehicle-card${isSelected ? ' selected' : ''}`}
+              className={`owned-vehicle-card${isSelected ? ' selected' : ''}${isDragOver ? ' drag-over' : ''}`}
               data-testid={`vehicle-card-${vehicle.id}`}
+              draggable={vehicles.length > 1}
+              onDragStart={() => handleDragStart(index)}
+              onDragOver={(e) => handleDragOver(e, index)}
+              onDrop={(e) => handleDrop(e, index)}
+              onDragEnd={handleDragEnd}
             >
               <div
                 className="vehicle-summary-row"
@@ -167,13 +190,68 @@ export const VehicleSwitcher: React.FC<VehicleSwitcherProps> = ({
                   )}
                 </div>
 
-                <div className="vehicle-mileage-box">
-                  <span className="vehicle-mileage-label">현재 주행거리</span>
-                  <strong className="vehicle-mileage-value">
-                    {formatMileage(vehicle.currentMileage)}
-                  </strong>
+                <div className="vehicle-card-right-col">
+                  <div className="vehicle-mileage-box">
+                    <span className="vehicle-mileage-label">현재 주행거리</span>
+                    <strong className="vehicle-mileage-value">
+                      {formatMileage(vehicle.currentMileage)}
+                    </strong>
+                  </div>
                 </div>
               </div>
+
+              {(isSelected || vehicles.length > 1) && (
+                <div className="vehicle-card-action-bar">
+                  {vehicles.length > 1 ? (
+                    <div
+                      className="vehicle-reorder-btns"
+                      aria-label={`${vehicle.name} 순서 변경`}
+                    >
+                      <button
+                        type="button"
+                        className="btn-reorder"
+                        disabled={isFirst}
+                        aria-label={`${vehicle.name} 위로 이동`}
+                        title="위로 이동"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onMoveVehicle?.(vehicle.id, 'up');
+                        }}
+                      >
+                        ▲
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-reorder"
+                        disabled={isLast}
+                        aria-label={`${vehicle.name} 아래로 이동`}
+                        title="아래로 이동"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onMoveVehicle?.(vehicle.id, 'down');
+                        }}
+                      >
+                        ▼
+                      </button>
+                    </div>
+                  ) : (
+                    <span />
+                  )}
+
+                  {isSelected && (
+                    <button
+                      type="button"
+                      className="btn btn-chip vehicle-card-edit-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenEditModal(vehicle);
+                      }}
+                    >
+                      차량 수정
+                    </button>
+                  )}
+                </div>
+              )}
 
               {showDetailToggle && (
                 <div className="vehicle-detail-specs-wrapper">

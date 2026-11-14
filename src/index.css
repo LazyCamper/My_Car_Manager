@@ -283,6 +283,21 @@ textarea {
   margin-bottom: 24px;
 }
 
+.vehicle-section-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 0 2px;
+}
+
+.vehicle-section-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .vehicle-switcher-bar {
   display: flex;
   flex-wrap: wrap;
@@ -339,7 +354,7 @@ textarea {
   box-shadow: var(--shadow-card);
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
   transition: all 0.22s cubic-bezier(0.22, 1, 0.36, 1);
   position: relative;
   overflow: hidden;
@@ -347,6 +362,91 @@ textarea {
 
 .owned-vehicle-card:hover {
   box-shadow: var(--shadow-card-hover);
+}
+
+.owned-vehicle-card.drag-over {
+  border: 2px dashed var(--color-primary);
+  transform: scale(0.99);
+}
+
+.vehicle-card-right-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.vehicle-card-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.owned-vehicle-card.selected .vehicle-card-action-bar {
+  border-top-color: rgba(255, 255, 255, 0.12);
+}
+
+.vehicle-reorder-btns {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-reorder {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  background-color: #f8fafc;
+  color: #4e5968;
+  font-size: 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.btn-reorder:hover:not(:disabled) {
+  background-color: #e5e8eb;
+  color: var(--color-text);
+}
+
+.btn-reorder:disabled {
+  opacity: 0.32;
+  cursor: not-allowed;
+}
+
+.owned-vehicle-card.selected .btn-reorder {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #e2e8f0;
+}
+
+.owned-vehicle-card.selected .btn-reorder:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.vehicle-card-edit-btn {
+  min-height: 36px;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+}
+
+.owned-vehicle-card.selected .vehicle-card-edit-btn {
+  background-color: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.owned-vehicle-card.selected .vehicle-card-edit-btn:hover {
+  background-color: rgba(255, 255, 255, 0.24);
 }
 
 /* 선택된 차량: 프리미엄 다크 네이비/슬레이트 패스 스타일 */
