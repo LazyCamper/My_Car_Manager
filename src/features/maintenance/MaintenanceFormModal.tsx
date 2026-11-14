@@ -430,7 +430,7 @@ export const MaintenanceFormModal: React.FC<MaintenanceFormModalProps> = ({
                 id="maint-shop"
                 type="text"
                 className="form-input touch-target"
-                placeholder="예: 구미서비스센터"
+                placeholder="예: 블루핸즈 강남점, 오토큐 성수점"
                 value={shopName}
                 onChange={(e) => setShopName(e.target.value)}
               />
@@ -446,7 +446,7 @@ export const MaintenanceFormModal: React.FC<MaintenanceFormModalProps> = ({
               type="text"
               inputMode="numeric"
               className="form-input touch-target"
-              placeholder="예: 2027.05.14"
+              placeholder="예: 2027.03.15"
               value={nextDueDate}
               onChange={(e) => setNextDueDate(e.target.value)}
             />

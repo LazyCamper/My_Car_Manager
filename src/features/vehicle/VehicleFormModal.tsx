@@ -555,7 +555,7 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
                     type="text"
                     inputMode="numeric"
                     className="form-input touch-target"
-                    placeholder="예: 2023.05.26"
+                    placeholder="예: 2024.03.15"
                     value={registrationDate}
                     onChange={(e) => setRegistrationDate(e.target.value)}
                   />
@@ -570,7 +570,7 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
                     type="number"
                     inputMode="numeric"
                     className="form-input touch-target"
-                    placeholder="예: 57700000"
+                    placeholder="예: 42000000"
                     value={vehiclePrice}
                     onChange={(e) => setVehiclePrice(e.target.value)}
                   />
@@ -587,7 +587,7 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
                     type="text"
                     inputMode="numeric"
                     className="form-input touch-target"
-                    placeholder="예: 2025.08.14"
+                    placeholder="예: 2024.03.20"
                     value={purchaseDate}
                     onChange={(e) => setPurchaseDate(e.target.value)}
                   />
@@ -605,7 +605,7 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
                     type="number"
                     inputMode="numeric"
                     className="form-input touch-target"
-                    placeholder="예: 56200"
+                    placeholder="예: 15000"
                     value={purchaseMileage}
                     onChange={(e) => setPurchaseMileage(e.target.value)}
                   />
@@ -625,7 +625,7 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
                     type="number"
                     inputMode="numeric"
                     className="form-input touch-target"
-                    placeholder="예: 50000000"
+                    placeholder="예: 38500000"
                     value={purchasePrice}
                     onChange={(e) => setPurchasePrice(e.target.value)}
                   />
@@ -639,7 +639,7 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
                     id="vehicle-color"
                     type="text"
                     className="form-input touch-target"
-                    placeholder="예: 망가니즈루스터 (도요타 1K2)"
+                    placeholder="예: 스노우 화이트 펄 (SWP)"
                     value={colorSpec}
                     onChange={(e) => setColorSpec(e.target.value)}
                   />
@@ -655,7 +655,7 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
                     id="vehicle-vin"
                     type="text"
                     className="form-input touch-target"
-                    placeholder="예: WBA31FU07PFP40365"
+                    placeholder="예: KNAGN418BPA000000"
                     value={vin}
                     onChange={(e) => setVin(e.target.value)}
                   />
@@ -669,7 +669,7 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
                     id="vehicle-tire"
                     type="text"
                     className="form-input touch-target"
-                    placeholder="예: 245/45R20 (39psi)"
+                    placeholder="예: 235/55R19 (36psi)"
                     value={tireSize}
                     onChange={(e) => setTireSize(e.target.value)}
                   />
@@ -684,7 +684,7 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
                   id="vehicle-engine"
                   type="text"
                   className="form-input touch-target"
-                  placeholder="예: B47 1,995cc / 트윈터보 직렬 4기통 디젤"
+                  placeholder="예: 1,598cc 직렬 4기통 가솔린 터보 하이브리드"
                   value={engineSpec}
                   onChange={(e) => setEngineSpec(e.target.value)}
                 />
@@ -698,7 +698,7 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
                   id="vehicle-perf"
                   type="text"
                   className="form-input touch-target"
-                  placeholder="예: 190마력, 40.8토크(1750~2500RPM) · 제로백 6.9초"
+                  placeholder="예: 시스템 최고출력 235마력 · 최대토크 35.7kg·m"
                   value={performanceSpec}
                   onChange={(e) => setPerformanceSpec(e.target.value)}
                 />
@@ -713,7 +713,7 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
                     id="vehicle-transmission"
                     type="text"
                     className="form-input touch-target"
-                    placeholder="예: 스텝트로닉 스포츠 자동 8단"
+                    placeholder="예: 자동 6단"
                     value={transmission}
                     onChange={(e) => setTransmission(e.target.value)}
                   />
@@ -727,7 +727,7 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
                     id="vehicle-fuel"
                     type="text"
                     className="form-input touch-target"
-                    placeholder="예: 59L · 복합연비 15.0km/L"
+                    placeholder="예: 67L · 복합연비 15.7km/L"
                     value={fuelSpec}
                     onChange={(e) => setFuelSpec(e.target.value)}
                   />
@@ -742,7 +742,7 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
                   id="vehicle-dimension"
                   type="text"
                   className="form-input touch-target"
-                  placeholder="예: 전장/전폭 5235/1900mm · 축거 3125mm · 공차중량 2330kg"
+                  placeholder="예: 전장/전폭 4815/1900mm · 축거 2815mm · 공차중량 1825kg"
                   value={dimensionSpec}
                   onChange={(e) => setDimensionSpec(e.target.value)}
                 />
@@ -756,7 +756,7 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
                   id="vehicle-consumables"
                   type="text"
                   className="form-input touch-target"
-                  placeholder="예: 에어컨필터 사이즈 245 * 178 * 28"
+                  placeholder="예: 와이퍼 운전석 650mm / 조수석 400mm"
                   value={consumablesSpec}
                   onChange={(e) => setConsumablesSpec(e.target.value)}
                 />
@@ -770,7 +770,7 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
                   id="vehicle-options"
                   type="text"
                   className="form-input touch-target"
-                  placeholder="예: Car eye 3.0 블랙박스, 신차 유리막, 생활ppf, 하이패스"
+                  placeholder="예: 드라이브 와이즈, 파노라마 선루프, 2채널 블랙박스"
                   value={options}
                   onChange={(e) => setOptions(e.target.value)}
                 />
@@ -784,7 +784,7 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
                   id="vehicle-tinting"
                   type="text"
                   className="form-input touch-target"
-                  placeholder="예: 레이노 S9 전면 45%, 측후면 35%"
+                  placeholder="예: 전면 35%, 측후면 15%"
                   value={tinting}
                   onChange={(e) => setTinting(e.target.value)}
                 />
@@ -792,13 +792,13 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
 
               <div className="form-field">
                 <label htmlFor="vehicle-memo" className="form-label">
-                  차량 관리 메모 (내비게이션 계정 · 비밀번호 · 쿠폰 잔여 등)
+                  차량 관리 메모
                 </label>
                 <textarea
                   id="vehicle-memo"
                   rows={3}
                   className="form-input"
-                  placeholder="내비 업데이트 아이디/비밀번호, 잔여 쿠폰 등을 직접 입력해 두세요"
+                  placeholder="보증 만료일, 엔진오일 규격, 기타 참고사항을 기록해 두세요"
                   value={memo}
                   onChange={(e) => setMemo(e.target.value)}
                 />

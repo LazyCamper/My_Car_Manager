@@ -426,7 +426,7 @@ describe('정비 내역 화면 (MaintenancePage) 통합 테스트', () => {
           categories: ['engine_oil', 'filter'],
           title: '엔진오일, 에어필터, 연료필터, 에어컨필터 교환',
           cost: 0,
-          shopName: '구미서비스센터',
+          shopName: '블루핸즈 강남점',
           attachmentIds: [],
           createdAt: '2026-05-12T09:00:00.000Z',
         },
