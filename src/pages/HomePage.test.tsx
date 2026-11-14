@@ -300,6 +300,12 @@ describe('홈 화면 및 차량 등록/수정/전환 통합 테스트', () => {
       expect(screen.getByText('현대해상 자동차 보험 만기')).toBeInTheDocument();
     });
 
+    // 선택하지 않아도 보유 차량 전체 목록(쏘렌토, 아반떼)의 기본 정보가 홈 화면에 즉시 표시됨
+    expect(screen.getByText(/기아 쏘렌토 · 2023년식/)).toBeInTheDocument();
+    expect(screen.getByText('30,000km')).toBeInTheDocument();
+    expect(screen.getByText(/현대 아반떼 · 2021년식/)).toBeInTheDocument();
+    expect(screen.getByText('55,000km')).toBeInTheDocument();
+
     const listItems = screen.getAllByRole('listitem');
     expect(listItems).toHaveLength(2);
     expect(listItems[0]).toHaveAttribute('data-status', 'overdue');

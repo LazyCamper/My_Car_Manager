@@ -86,7 +86,10 @@ export const MaintenanceTimeline: React.FC<MaintenanceTimelineProps> = ({
                       <div className="timeline-date-group">
                         <span className="timeline-date">{log.date}</span>
                         {logCategories.map((cat) => (
-                          <span key={cat} className="timeline-category-badge">
+                          <span
+                            key={cat}
+                            className={`timeline-category-badge timeline-category-badge--${cat}`}
+                          >
                             {getCategoryLabel(cat)}
                           </span>
                         ))}

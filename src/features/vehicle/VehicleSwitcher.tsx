@@ -10,6 +10,28 @@ export interface VehicleSwitcherProps {
   onOpenEditModal: (vehicle: Vehicle) => void;
 }
 
+function hasVehicleDetailSpecs(v: Vehicle): boolean {
+  return Boolean(
+    v.registrationDate ||
+      v.purchaseDate ||
+      v.purchaseMileage ||
+      v.purchasePrice ||
+      v.vin ||
+      v.tireSize ||
+      v.vehiclePrice ||
+      v.engineSpec ||
+      v.performanceSpec ||
+      v.transmission ||
+      v.fuelSpec ||
+      v.dimensionSpec ||
+      v.consumablesSpec ||
+      v.colorSpec ||
+      v.options ||
+      v.tinting ||
+      v.memo,
+  );
+}
+
 export const VehicleSwitcher: React.FC<VehicleSwitcherProps> = ({
   vehicles,
   activeVehicle,
@@ -17,50 +39,36 @@ export const VehicleSwitcher: React.FC<VehicleSwitcherProps> = ({
   onOpenAddModal,
   onOpenEditModal,
 }) => {
-  const [isSpecOpen, setIsSpecOpen] = useState(false);
-  const [copiedVin, setCopiedVin] = useState(false);
+  const [expandedVehicleIds, setExpandedVehicleIds] = useState<
+    Record<string, boolean>
+  >({});
+  const [copiedVinId, setCopiedVinId] = useState<string | null>(null);
 
-  const hasDetailSpecs = Boolean(
-    activeVehicle.registrationDate ||
-      activeVehicle.purchaseDate ||
-      activeVehicle.purchaseMileage ||
-      activeVehicle.purchasePrice ||
-      activeVehicle.vin ||
-      activeVehicle.tireSize ||
-      activeVehicle.vehiclePrice ||
-      activeVehicle.engineSpec ||
-      activeVehicle.performanceSpec ||
-      activeVehicle.transmission ||
-      activeVehicle.fuelSpec ||
-      activeVehicle.dimensionSpec ||
-      activeVehicle.consumablesSpec ||
-      activeVehicle.colorSpec ||
-      activeVehicle.options ||
-      activeVehicle.tinting ||
-      activeVehicle.memo,
-  );
+  const toggleSpecOpen = (vehicleId: string) => {
+    setExpandedVehicleIds((prev) => ({
+      ...prev,
+      [vehicleId]: !prev[vehicleId],
+    }));
+  };
 
-  const drivenSincePurchase =
-    typeof activeVehicle.purchaseMileage === 'number' &&
-    activeVehicle.currentMileage >= activeVehicle.purchaseMileage
-      ? activeVehicle.currentMileage - activeVehicle.purchaseMileage
-      : undefined;
-
-  const handleCopyVin = async () => {
-    if (!activeVehicle.vin) return;
+  const handleCopyVin = async (vehicle: Vehicle) => {
+    if (!vehicle.vin) return;
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(activeVehicle.vin);
+        await navigator.clipboard.writeText(vehicle.vin);
       }
-      setCopiedVin(true);
-      setTimeout(() => setCopiedVin(false), 2000);
+      setCopiedVinId(vehicle.id);
+      setTimeout(() => setCopiedVinId(null), 2000);
     } catch {
-      setCopiedVin(false);
+      setCopiedVinId(null);
     }
   };
 
   return (
-    <section className="vehicle-header-card" aria-label="선택된 차량 정보 및 전환">
+    <section
+      className="vehicle-header-card"
+      aria-label="보유 차량 목록 및 선택"
+    >
       <div className="vehicle-switcher-bar">
         <div className="vehicle-select-wrapper">
           <label htmlFor="active-vehicle-select" className="sr-only">
@@ -99,173 +107,227 @@ export const VehicleSwitcher: React.FC<VehicleSwitcherProps> = ({
         </div>
       </div>
 
-      <div className="vehicle-summary-row">
-        <div className="vehicle-summary-main">
-          <span className="vehicle-model-text">
-            {activeVehicle.manufacturerModel} · {activeVehicle.modelYear}년식
-          </span>
-          <div className="vehicle-badge-group">
-            <span className="vehicle-plate-badge">{activeVehicle.plateNumber}</span>
-            {activeVehicle.tireSize && (
-              <span className="vehicle-spec-mini-badge">
-                타이어 {activeVehicle.tireSize}
-              </span>
-            )}
-          </div>
-        </div>
-        <div className="vehicle-mileage-box">
-          <span className="vehicle-mileage-label">현재 주행거리</span>
-          <strong className="vehicle-mileage-value">
-            {formatMileage(activeVehicle.currentMileage)}
-          </strong>
-        </div>
-      </div>
+      <div
+        className="owned-vehicle-list"
+        data-testid="owned-vehicles-list"
+        aria-label="보유 차량 전체 목록"
+      >
+        {vehicles.map((vehicle) => {
+          const isSelected = vehicle.id === activeVehicle.id;
+          const isSpecOpen = Boolean(expandedVehicleIds[vehicle.id]);
+          const showDetailToggle = hasVehicleDetailSpecs(vehicle);
+          const drivenSincePurchase =
+            typeof vehicle.purchaseMileage === 'number' &&
+            vehicle.currentMileage >= vehicle.purchaseMileage
+              ? vehicle.currentMileage - vehicle.purchaseMileage
+              : undefined;
 
-      {hasDetailSpecs && (
-        <div className="vehicle-detail-specs-wrapper">
-          <button
-            type="button"
-            className="vehicle-specs-expand-btn touch-target"
-            onClick={() => setIsSpecOpen((prev) => !prev)}
-            aria-expanded={isSpecOpen}
-          >
-            {isSpecOpen ? '▲ 제원 · 옵션 상세 닫기' : '▼ 제원 · 옵션 상세보기'}
-          </button>
-
-          {isSpecOpen && (
-            <dl
-              className="vehicle-specs-dl"
-              data-testid="vehicle-detail-specs-panel"
+          return (
+            <article
+              key={vehicle.id}
+              className={`owned-vehicle-card${isSelected ? ' selected' : ''}`}
+              data-testid={`vehicle-card-${vehicle.id}`}
             >
-              {activeVehicle.registrationDate && (
-                <div className="vehicle-spec-item">
-                  <dt>최초 등록일</dt>
-                  <dd>{activeVehicle.registrationDate}</dd>
+              <div
+                className="vehicle-summary-row"
+                onClick={() => {
+                  if (!isSelected) {
+                    onSelectVehicle(vehicle.id);
+                  }
+                }}
+              >
+                <div className="vehicle-summary-main">
+                  <div className="vehicle-title-line">
+                    <strong className="vehicle-name-badge">
+                      {vehicle.name}
+                    </strong>
+                    <span className="vehicle-plate-badge">
+                      {vehicle.plateNumber}
+                    </span>
+                    {isSelected && (
+                      <span className="vehicle-active-pill">선택됨</span>
+                    )}
+                  </div>
+                  <span className="vehicle-model-text">
+                    {vehicle.manufacturerModel} · {vehicle.modelYear}년식
+                  </span>
+                  {(vehicle.tireSize || vehicle.registrationDate) && (
+                    <div className="vehicle-badge-group">
+                      {vehicle.registrationDate && (
+                        <span className="vehicle-spec-mini-badge">
+                          등록 {vehicle.registrationDate}
+                        </span>
+                      )}
+                      {vehicle.tireSize && (
+                        <span className="vehicle-spec-mini-badge">
+                          타이어 {vehicle.tireSize}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
-              )}
-              {typeof activeVehicle.vehiclePrice === 'number' && (
-                <div className="vehicle-spec-item">
-                  <dt>출고 차량가</dt>
-                  <dd>{formatCurrency(activeVehicle.vehiclePrice)}</dd>
+
+                <div className="vehicle-mileage-box">
+                  <span className="vehicle-mileage-label">현재 주행거리</span>
+                  <strong className="vehicle-mileage-value">
+                    {formatMileage(vehicle.currentMileage)}
+                  </strong>
                 </div>
-              )}
-              {activeVehicle.purchaseDate && (
-                <div className="vehicle-spec-item">
-                  <dt>구매(인수)일</dt>
-                  <dd>{activeVehicle.purchaseDate}</dd>
-                </div>
-              )}
-              {typeof activeVehicle.purchasePrice === 'number' && (
-                <div className="vehicle-spec-item">
-                  <dt>실구매가</dt>
-                  <dd>{formatCurrency(activeVehicle.purchasePrice)}</dd>
-                </div>
-              )}
-              {typeof activeVehicle.purchaseMileage === 'number' && (
-                <div className="vehicle-spec-item vehicle-spec-item-wide">
-                  <dt>인수 당시 주행거리</dt>
-                  <dd>
-                    {formatMileage(activeVehicle.purchaseMileage)}
-                    {typeof drivenSincePurchase === 'number'
-                      ? ` (인수 후 +${formatMileage(drivenSincePurchase)} 주행)`
-                      : ''}
-                  </dd>
-                </div>
-              )}
-              {activeVehicle.vin && (
-                <div className="vehicle-spec-item vehicle-spec-item-wide">
-                  <dt>차대번호 (VIN)</dt>
-                  <dd className="vehicle-vin-row">
-                    <code className="vehicle-vin-code">{activeVehicle.vin}</code>
-                    <button
-                      type="button"
-                      className="btn btn-chip"
-                      onClick={() => void handleCopyVin()}
+              </div>
+
+              {showDetailToggle && (
+                <div className="vehicle-detail-specs-wrapper">
+                  <button
+                    type="button"
+                    className="vehicle-specs-expand-btn touch-target"
+                    onClick={() => toggleSpecOpen(vehicle.id)}
+                    aria-expanded={isSpecOpen}
+                  >
+                    {isSpecOpen
+                      ? '▲ 제원 · 옵션 상세 닫기'
+                      : '▼ 제원 · 옵션 상세보기'}
+                  </button>
+
+                  {isSpecOpen && (
+                    <dl
+                      className="vehicle-specs-dl"
+                      data-testid="vehicle-detail-specs-panel"
                     >
-                      {copiedVin ? '복사됨 ✓' : '복사'}
-                    </button>
-                  </dd>
+                      {vehicle.registrationDate && (
+                        <div className="vehicle-spec-item">
+                          <dt>최초 등록일</dt>
+                          <dd>{vehicle.registrationDate}</dd>
+                        </div>
+                      )}
+                      {typeof vehicle.vehiclePrice === 'number' && (
+                        <div className="vehicle-spec-item">
+                          <dt>출고 차량가</dt>
+                          <dd>{formatCurrency(vehicle.vehiclePrice)}</dd>
+                        </div>
+                      )}
+                      {vehicle.purchaseDate && (
+                        <div className="vehicle-spec-item">
+                          <dt>구매(인수)일</dt>
+                          <dd>{vehicle.purchaseDate}</dd>
+                        </div>
+                      )}
+                      {typeof vehicle.purchasePrice === 'number' && (
+                        <div className="vehicle-spec-item">
+                          <dt>실구매가</dt>
+                          <dd>{formatCurrency(vehicle.purchasePrice)}</dd>
+                        </div>
+                      )}
+                      {typeof vehicle.purchaseMileage === 'number' && (
+                        <div className="vehicle-spec-item vehicle-spec-item-wide">
+                          <dt>인수 당시 주행거리</dt>
+                          <dd>
+                            {formatMileage(vehicle.purchaseMileage)}
+                            {typeof drivenSincePurchase === 'number'
+                              ? ` (인수 후 +${formatMileage(drivenSincePurchase)} 주행)`
+                              : ''}
+                          </dd>
+                        </div>
+                      )}
+                      {vehicle.vin && (
+                        <div className="vehicle-spec-item vehicle-spec-item-wide">
+                          <dt>차대번호 (VIN)</dt>
+                          <dd className="vehicle-vin-row">
+                            <code className="vehicle-vin-code">
+                              {vehicle.vin}
+                            </code>
+                            <button
+                              type="button"
+                              className="btn btn-chip"
+                              onClick={() => void handleCopyVin(vehicle)}
+                            >
+                              {copiedVinId === vehicle.id ? '복사됨 ✓' : '복사'}
+                            </button>
+                          </dd>
+                        </div>
+                      )}
+                      {vehicle.colorSpec && (
+                        <div className="vehicle-spec-item vehicle-spec-item-wide">
+                          <dt>외장 색상 · 컬러코드</dt>
+                          <dd>{vehicle.colorSpec}</dd>
+                        </div>
+                      )}
+                      {vehicle.engineSpec && (
+                        <div className="vehicle-spec-item vehicle-spec-item-wide">
+                          <dt>엔진</dt>
+                          <dd>{vehicle.engineSpec}</dd>
+                        </div>
+                      )}
+                      {vehicle.performanceSpec && (
+                        <div className="vehicle-spec-item vehicle-spec-item-wide">
+                          <dt>출력 · 성능</dt>
+                          <dd>{vehicle.performanceSpec}</dd>
+                        </div>
+                      )}
+                      {vehicle.transmission && (
+                        <div className="vehicle-spec-item">
+                          <dt>변속기</dt>
+                          <dd>{vehicle.transmission}</dd>
+                        </div>
+                      )}
+                      {vehicle.fuelSpec && (
+                        <div className="vehicle-spec-item">
+                          <dt>연료 · 연비</dt>
+                          <dd>{vehicle.fuelSpec}</dd>
+                        </div>
+                      )}
+                      {vehicle.dimensionSpec && (
+                        <div className="vehicle-spec-item vehicle-spec-item-wide">
+                          <dt>차체 치수 · 공차중량</dt>
+                          <dd>{vehicle.dimensionSpec}</dd>
+                        </div>
+                      )}
+                      {vehicle.tireSize && (
+                        <div className="vehicle-spec-item">
+                          <dt>타이어 · 공기압</dt>
+                          <dd>{vehicle.tireSize}</dd>
+                        </div>
+                      )}
+                      {vehicle.consumablesSpec && (
+                        <div className="vehicle-spec-item">
+                          <dt>소모품 규격</dt>
+                          <dd>{vehicle.consumablesSpec}</dd>
+                        </div>
+                      )}
+                      {vehicle.options && (
+                        <div className="vehicle-spec-item vehicle-spec-item-wide">
+                          <dt>장착 옵션</dt>
+                          <dd>{vehicle.options}</dd>
+                        </div>
+                      )}
+                      {vehicle.tinting && (
+                        <div className="vehicle-spec-item vehicle-spec-item-wide">
+                          <dt>틴팅</dt>
+                          <dd>{vehicle.tinting}</dd>
+                        </div>
+                      )}
+                      {vehicle.memo && (
+                        <div className="vehicle-spec-item vehicle-spec-item-wide">
+                          <dt className="vehicle-memo-dt">
+                            <span>차량 관리 메모 · 계정</span>
+                            <button
+                              type="button"
+                              className="btn btn-chip"
+                              onClick={() => onOpenEditModal(vehicle)}
+                            >
+                              비밀번호 · 메모 수정
+                            </button>
+                          </dt>
+                          <dd className="vehicle-memo-dd">{vehicle.memo}</dd>
+                        </div>
+                      )}
+                    </dl>
+                  )}
                 </div>
               )}
-              {activeVehicle.colorSpec && (
-                <div className="vehicle-spec-item vehicle-spec-item-wide">
-                  <dt>외장 색상 · 컬러코드</dt>
-                  <dd>{activeVehicle.colorSpec}</dd>
-                </div>
-              )}
-              {activeVehicle.engineSpec && (
-                <div className="vehicle-spec-item vehicle-spec-item-wide">
-                  <dt>엔진</dt>
-                  <dd>{activeVehicle.engineSpec}</dd>
-                </div>
-              )}
-              {activeVehicle.performanceSpec && (
-                <div className="vehicle-spec-item vehicle-spec-item-wide">
-                  <dt>출력 · 성능</dt>
-                  <dd>{activeVehicle.performanceSpec}</dd>
-                </div>
-              )}
-              {activeVehicle.transmission && (
-                <div className="vehicle-spec-item">
-                  <dt>변속기</dt>
-                  <dd>{activeVehicle.transmission}</dd>
-                </div>
-              )}
-              {activeVehicle.fuelSpec && (
-                <div className="vehicle-spec-item">
-                  <dt>연료 · 연비</dt>
-                  <dd>{activeVehicle.fuelSpec}</dd>
-                </div>
-              )}
-              {activeVehicle.dimensionSpec && (
-                <div className="vehicle-spec-item vehicle-spec-item-wide">
-                  <dt>차체 치수 · 공차중량</dt>
-                  <dd>{activeVehicle.dimensionSpec}</dd>
-                </div>
-              )}
-              {activeVehicle.tireSize && (
-                <div className="vehicle-spec-item">
-                  <dt>타이어 · 공기압</dt>
-                  <dd>{activeVehicle.tireSize}</dd>
-                </div>
-              )}
-              {activeVehicle.consumablesSpec && (
-                <div className="vehicle-spec-item">
-                  <dt>소모품 규격</dt>
-                  <dd>{activeVehicle.consumablesSpec}</dd>
-                </div>
-              )}
-              {activeVehicle.options && (
-                <div className="vehicle-spec-item vehicle-spec-item-wide">
-                  <dt>장착 옵션</dt>
-                  <dd>{activeVehicle.options}</dd>
-                </div>
-              )}
-              {activeVehicle.tinting && (
-                <div className="vehicle-spec-item vehicle-spec-item-wide">
-                  <dt>틴팅</dt>
-                  <dd>{activeVehicle.tinting}</dd>
-                </div>
-              )}
-              {activeVehicle.memo && (
-                <div className="vehicle-spec-item vehicle-spec-item-wide">
-                  <dt className="vehicle-memo-dt">
-                    <span>차량 관리 메모 · 계정</span>
-                    <button
-                      type="button"
-                      className="btn btn-chip"
-                      onClick={() => onOpenEditModal(activeVehicle)}
-                    >
-                      비밀번호 · 메모 수정
-                    </button>
-                  </dt>
-                  <dd className="vehicle-memo-dd">{activeVehicle.memo}</dd>
-                </div>
-              )}
-            </dl>
-          )}
-        </div>
-      )}
+            </article>
+          );
+        })}
+      </div>
     </section>
   );
 };
