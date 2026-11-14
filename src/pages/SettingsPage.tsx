@@ -142,10 +142,16 @@ export const SettingsPage: React.FC = () => {
 
   return (
     <section aria-labelledby="settings-title" className="settings-page">
-      <header className="page-header">
-        <h1 id="settings-title" className="page-title">
-          설정
-        </h1>
+      <header className="page-header garage-hero-banner garage-hero-banner--settings">
+        <div className="garage-hero-content">
+          <span className="garage-hero-eyebrow">DATA &amp; SYSTEM PREFERENCES</span>
+          <h1 id="settings-title" className="page-title garage-hero-title">
+            설정
+          </h1>
+          <p className="garage-hero-subtitle">
+            데이터 JSON 백업·복원 및 오프라인 앱 저장소 환경 관리
+          </p>
+        </div>
       </header>
 
       <section

@@ -107,33 +107,70 @@ body {
   color: var(--color-text);
 }
 
-/* 나의 차고 상단 오토모티브 쇼룸 히어로 배너 */
+/* 나의 차고 및 주요 페이지 상단 오토모티브 쇼룸 히어로 배너 */
 .garage-hero-banner {
   position: relative;
   overflow: hidden;
   border-radius: 24px;
-  padding: 22px 20px;
+  padding: 26px 22px;
+  min-height: 132px;
   margin-bottom: 22px;
-  background:
-    radial-gradient(circle at 85% 20%, rgba(59, 130, 246, 0.35) 0%, transparent 55%),
-    linear-gradient(135deg, #0b1120 0%, #172554 58%, #1e3a8a 100%);
+  background-color: #070b14;
+  background-image:
+    linear-gradient(
+      90deg,
+      rgba(7, 11, 20, 0.92) 0%,
+      rgba(7, 11, 20, 0.72) 42%,
+      rgba(7, 11, 20, 0.18) 72%,
+      rgba(7, 11, 20, 0.05) 100%
+    ),
+    url('./assets/garage-hero-bg.jpg');
+  background-size: cover;
+  background-position: right center;
+  background-repeat: no-repeat;
+  border: 1px solid rgba(148, 163, 184, 0.18);
   color: #ffffff;
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.24);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
 
-.garage-hero-banner::before {
-  content: '';
-  position: absolute;
-  inset: 0;
+.garage-hero-banner--maintenance {
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-  background-size: 24px 24px;
-  pointer-events: none;
+    linear-gradient(
+      90deg,
+      rgba(7, 11, 20, 0.94) 0%,
+      rgba(7, 11, 20, 0.74) 44%,
+      rgba(7, 11, 20, 0.2) 74%,
+      rgba(7, 11, 20, 0.06) 100%
+    ),
+    url('./assets/maintenance-hero-bg.jpg');
+}
+
+.garage-hero-banner--compliance {
+  background-image:
+    linear-gradient(
+      90deg,
+      rgba(7, 11, 20, 0.94) 0%,
+      rgba(7, 11, 20, 0.74) 44%,
+      rgba(7, 11, 20, 0.2) 74%,
+      rgba(7, 11, 20, 0.06) 100%
+    ),
+    url('./assets/compliance-hero-bg.jpg');
+}
+
+.garage-hero-banner--settings {
+  background-image:
+    linear-gradient(
+      90deg,
+      rgba(7, 11, 20, 0.94) 0%,
+      rgba(7, 11, 20, 0.74) 44%,
+      rgba(7, 11, 20, 0.22) 74%,
+      rgba(7, 11, 20, 0.08) 100%
+    ),
+    url('./assets/settings-hero-bg.jpg');
 }
 
 .garage-hero-content {
@@ -147,30 +184,23 @@ body {
 .garage-hero-eyebrow {
   font-size: 0.7rem;
   font-weight: 800;
-  letter-spacing: 0.12em;
-  color: #93c5fd;
+  letter-spacing: 0.14em;
+  color: #60a5fa;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
 }
 
 .garage-hero-title {
   color: #ffffff;
-  font-size: 1.55rem;
+  font-size: 1.6rem;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.65);
 }
 
 .garage-hero-subtitle {
   font-size: 0.82rem;
   font-weight: 600;
-  color: #cbd5e1;
-  margin-top: 2px;
-}
-
-.garage-hero-art {
-  position: absolute;
-  right: -8px;
-  bottom: -4px;
-  width: 175px;
-  height: auto;
-  opacity: 0.88;
-  pointer-events: none;
+  color: #e2e8f0;
+  margin-top: 3px;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.75);
 }
 
 /* 하단 탭 내비게이션 (플로팅 글래스모피즘 독 스타일) */
@@ -1206,7 +1236,20 @@ textarea {
 }
 
 .maint-vehicle-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin-bottom: 14px;
+}
+
+.maint-vehicle-bar .vehicle-select {
+  flex: 1;
+  min-width: 0;
+}
+
+.maint-vehicle-bar .btn {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .maint-total-cost-row {

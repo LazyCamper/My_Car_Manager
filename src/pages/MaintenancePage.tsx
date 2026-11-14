@@ -87,19 +87,18 @@ export const MaintenancePage: React.FC = () => {
 
   return (
     <section aria-labelledby="maintenance-title" className="maintenance-page">
-      <header className="page-header page-header-with-action">
-        <h1 id="maintenance-title" className="page-title">
-          정비
-        </h1>
-        {activeVehicle && (
-          <button
-            type="button"
-            className="btn btn-primary touch-target"
-            onClick={handleOpenAddModal}
-          >
-            + 정비 등록
-          </button>
-        )}
+      <header className="page-header garage-hero-banner garage-hero-banner--maintenance">
+        <div className="garage-hero-content">
+          <span className="garage-hero-eyebrow">SERVICE &amp; MAINTENANCE</span>
+          <h1 id="maintenance-title" className="page-title garage-hero-title">
+            정비
+          </h1>
+          <p className="garage-hero-subtitle">
+            {activeVehicle
+              ? `${activeVehicle.name} · 소모품 교체 및 정비 이력 타임라인`
+              : '차량별 정비 이력과 누적 지출 비용을 체계적으로 기록하세요'}
+          </p>
+        </div>
       </header>
 
       {isVehicleLoading ? (
@@ -142,6 +141,13 @@ export const MaintenancePage: React.FC = () => {
                   </option>
                 ))}
               </select>
+              <button
+                type="button"
+                className="btn btn-primary touch-target"
+                onClick={handleOpenAddModal}
+              >
+                + 정비 등록
+              </button>
             </div>
 
             <div className="maint-total-cost-row">

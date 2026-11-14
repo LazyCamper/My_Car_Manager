@@ -165,42 +165,6 @@ export const HomePage: React.FC = () => {
               : '내 차의 제원과 정비·검사·보험 이력을 한곳에서 관리하세요'}
           </p>
         </div>
-        <svg
-          className="garage-hero-art"
-          viewBox="0 0 240 100"
-          fill="none"
-          aria-hidden="true"
-        >
-          <defs>
-            <linearGradient id="heroCarGrad" x1="0" y1="0" x2="240" y2="0" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="#60a5fa" stopOpacity="0.15" />
-              <stop offset="55%" stopColor="#93c5fd" stopOpacity="0.65" />
-              <stop offset="100%" stopColor="#ffffff" stopOpacity="0.9" />
-            </linearGradient>
-            <linearGradient id="heroBeamGrad" x1="185" y1="58" x2="240" y2="42" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="#60a5fa" stopOpacity="0.55" />
-              <stop offset="100%" stopColor="#60a5fa" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          <polygon points="188,54 240,34 240,68 188,62" fill="url(#heroBeamGrad)" />
-          <path
-            d="M18 68 L34 66 L58 44 C72 33 92 29 118 29 L148 31 C162 32 174 39 186 48 L206 53 C214 55 218 60 218 66 L218 70 L18 70 Z"
-            stroke="url(#heroCarGrad)"
-            strokeWidth="2.4"
-            fill="rgba(59, 130, 246, 0.08)"
-          />
-          <path
-            d="M66 46 L108 34 L152 35 L176 48 Z"
-            stroke="rgba(191, 219, 254, 0.45)"
-            strokeWidth="1.5"
-            fill="rgba(147, 197, 253, 0.1)"
-          />
-          <circle cx="62" cy="70" r="13" fill="#0f172a" stroke="#93c5fd" strokeWidth="2.4" />
-          <circle cx="62" cy="70" r="5" fill="#60a5fa" />
-          <circle cx="176" cy="70" r="13" fill="#0f172a" stroke="#93c5fd" strokeWidth="2.4" />
-          <circle cx="176" cy="70" r="5" fill="#60a5fa" />
-          <line x1="4" y1="84" x2="234" y2="84" stroke="rgba(148, 163, 184, 0.28)" strokeWidth="1.2" strokeDasharray="6 6" />
-        </svg>
       </header>
 
       {showBackupBanner && (

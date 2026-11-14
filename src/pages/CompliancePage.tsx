@@ -96,10 +96,18 @@ export const CompliancePage: React.FC = () => {
 
   return (
     <section aria-labelledby="compliance-title" className="compliance-page">
-      <header className="page-header">
-        <h1 id="compliance-title" className="page-title">
-          검사·보험
-        </h1>
+      <header className="page-header garage-hero-banner garage-hero-banner--compliance">
+        <div className="garage-hero-content">
+          <span className="garage-hero-eyebrow">INSPECTION &amp; INSURANCE</span>
+          <h1 id="compliance-title" className="page-title garage-hero-title">
+            검사·보험
+          </h1>
+          <p className="garage-hero-subtitle">
+            {activeVehicle
+              ? `${activeVehicle.name} · 정기검사 유효기간 및 자동차 보험 만기 관리`
+              : '자동차 검사일과 보험 만기일을 놓치지 않게 한눈에 관리하세요'}
+          </p>
+        </div>
       </header>
 
       {isVehicleLoading ? (
