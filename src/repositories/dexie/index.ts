@@ -49,7 +49,9 @@ export class DexieVehicleRepository implements IVehicleRepository {
 
   async save(input: VehicleInput): Promise<Vehicle> {
     const now = new Date().toISOString();
+    const todayDot = now.slice(0, 10).replace(/-/g, '.');
     const optionalSpecs = {
+      mileageUpdatedAt: input.mileageUpdatedAt?.trim() || undefined,
       registrationDate: input.registrationDate?.trim() || undefined,
       purchaseDate: input.purchaseDate?.trim() || undefined,
       purchaseMileage:
@@ -82,11 +84,17 @@ export class DexieVehicleRepository implements IVehicleRepository {
       options: input.options?.trim() || undefined,
       tinting: input.tinting?.trim() || undefined,
       memo: input.memo?.trim() || undefined,
+      backgroundImage: input.backgroundImage?.trim() || undefined,
     };
 
     if (input.id) {
       const existing = await this.db.vehicles.get(input.id);
       if (existing) {
+        const nextMileage = Number(input.currentMileage);
+        const mileageChanged = nextMileage !== existing.currentMileage;
+        const resolvedMileageDate =
+          optionalSpecs.mileageUpdatedAt ??
+          (mileageChanged ? todayDot : existing.mileageUpdatedAt);
         const updated: Vehicle = {
           ...existing,
           ...optionalSpecs,
@@ -94,7 +102,8 @@ export class DexieVehicleRepository implements IVehicleRepository {
           plateNumber: input.plateNumber.trim(),
           manufacturerModel: input.manufacturerModel.trim(),
           modelYear: Number(input.modelYear),
-          currentMileage: Number(input.currentMileage),
+          currentMileage: nextMileage,
+          mileageUpdatedAt: resolvedMileageDate,
           displayOrder: input.displayOrder ?? existing.displayOrder,
           updatedAt: now,
         };
@@ -112,6 +121,7 @@ export class DexieVehicleRepository implements IVehicleRepository {
       modelYear: Number(input.modelYear),
       currentMileage: Number(input.currentMileage),
       ...optionalSpecs,
+      mileageUpdatedAt: optionalSpecs.mileageUpdatedAt ?? todayDot,
       displayOrder: input.displayOrder ?? count,
       createdAt: now,
       updatedAt: now,

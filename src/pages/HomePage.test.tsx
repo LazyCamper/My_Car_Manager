@@ -301,9 +301,12 @@ describe('홈 화면 및 차량 등록/수정/전환 통합 테스트', () => {
       expect(screen.getByText('현대해상 자동차 보험 만기')).toBeInTheDocument();
     });
 
-    // 선택하지 않아도 보유 차량 전체 목록(쏘렌토, 아반떼)의 기본 정보가 홈 화면에 즉시 표시됨
+    // 선택하지 않아도 보유 차량 전체 목록(쏘렌토, 아반떼)의 기본 정보와 주행거리 기준일이 홈 화면에 즉시 표시됨
     expect(screen.getByText(/기아 쏘렌토 · 2023년식/)).toBeInTheDocument();
     expect(screen.getByText('30,000km')).toBeInTheDocument();
+    expect(screen.getByTestId('mileage-date-v-1')).toHaveTextContent(
+      '2026.01.01 기준',
+    );
     expect(screen.getByText(/현대 아반떼 · 2021년식/)).toBeInTheDocument();
     expect(screen.getByText('55,000km')).toBeInTheDocument();
 
@@ -325,8 +328,12 @@ describe('홈 화면 및 차량 등록/수정/전환 통합 테스트', () => {
     });
     expect(screen.getByText('D-60')).toBeInTheDocument();
 
-    // 차량 카드 순서 변경 (아반떼 위로 이동)
-    fireEvent.click(screen.getByRole('button', { name: '아반떼 위로 이동' }));
+    // 차량 카드 드래그 앤 드롭으로 순서 변경 (아반떼 카드를 첫 번째 위치로 드롭)
+    const secondCard = screen.getByTestId('vehicle-card-v-2');
+    const firstCard = screen.getByTestId('vehicle-card-v-1');
+    fireEvent.dragStart(secondCard);
+    fireEvent.dragOver(firstCard);
+    fireEvent.drop(firstCard);
 
     await waitFor(() => {
       const cards = screen
@@ -394,10 +401,22 @@ describe('홈 화면 및 차량 등록/수정/전환 통합 테스트', () => {
       screen.getByText(/에어컨필터 245 \* 178 \* 28/),
     ).toBeInTheDocument();
 
-    // 비밀번호 · 메모 수정 클릭하여 메모 업데이트
+    // 비밀번호 · 메모 수정 클릭하여 메모 및 차량 배경 사진 업로드 테스트
     fireEvent.click(
       screen.getByRole('button', { name: '비밀번호 · 메모 수정' }),
     );
+    const bgFileInput = screen.getByTestId('vehicle-bg-file-input');
+    const photoFile = new File(['car-photo-bytes'], 'my-car.jpg', {
+      type: 'image/jpeg',
+    });
+    fireEvent.change(bgFileInput, { target: { files: [photoFile] } });
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId('vehicle-bg-custom-preview'),
+      ).toBeInTheDocument();
+    });
+
     fireEvent.change(screen.getByLabelText(/차량 관리 메모/), {
       target: { value: '내비 업데이트 메모: 변경완료' },
     });
@@ -408,5 +427,8 @@ describe('홈 화면 및 차량 등록/수정/전환 통합 테스트', () => {
         screen.getByText(/내비 업데이트 메모: 변경완료/),
       ).toBeInTheDocument();
     });
+    expect(
+      screen.getByTestId('vehicle-photo-bg-v-spec-1'),
+    ).toBeInTheDocument();
   });
 });

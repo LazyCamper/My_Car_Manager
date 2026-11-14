@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, vi } from 'vitest';
 import { ActiveVehicleProvider } from '../app/ActiveVehicleContext';
@@ -200,10 +200,9 @@ describe('정비 내역 화면 (MaintenancePage) 통합 테스트', () => {
       '비용은 0원 이상의 숫자로 입력해 주세요.',
     );
 
-    // 4. 정상 입력 및 직접 입력 항목 테스트
-    fireEvent.change(screen.getByLabelText(/정비 항목 분류/), {
-      target: { value: 'other' },
-    });
+    // 4. 정상 입력 및 '기타' 항목 칩 선택 테스트
+    const categoryGroup = screen.getByRole('group', { name: '정비 항목 분류' });
+    fireEvent.click(within(categoryGroup).getByRole('button', { name: '기타' }));
     fireEvent.change(screen.getByLabelText(/정비 항목 상세명/), {
       target: { value: '와이퍼 블레이드 교체' },
     });
@@ -471,9 +470,10 @@ describe('정비 내역 화면 (MaintenancePage) 통합 테스트', () => {
     fireEvent.change(screen.getByLabelText(/주행거리/), {
       target: { value: '' },
     });
-    fireEvent.change(screen.getByLabelText(/정비 항목 분류/), {
-      target: { value: 'accident_repair' },
-    });
+    const categoryGroup = screen.getByRole('group', { name: '정비 항목 분류' });
+    fireEvent.click(
+      within(categoryGroup).getByRole('button', { name: '사고·외판' }),
+    );
     fireEvent.change(screen.getByLabelText(/정비 항목 상세명/), {
       target: { value: '앞범퍼, 운전석 앞휀더, 앞바퀴휠 교체' },
     });

@@ -14,20 +14,26 @@ export const MAINTENANCE_CATEGORY_OPTIONS: MaintenanceCategoryOption[] = [
   { value: 'filter', label: '에어컨·필터', defaultTitle: '에어컨 필터 교체' },
   { value: 'repair', label: '수리·보증', defaultTitle: '부품 수리/교환' },
   { value: 'accident_repair', label: '사고·외판', defaultTitle: '외판/사고 수리' },
-  { value: 'camper_as', label: '캠핑·설비', defaultTitle: '캠핑 설비 AS/시공' },
-  { value: 'other', label: '직접 입력', defaultTitle: '' },
+  { value: 'other', label: '기타', defaultTitle: '' },
 ];
 
+function normalizeCategory(raw: string): MaintenanceCategory {
+  if (raw === 'camper_as') return 'other';
+  const valid = MAINTENANCE_CATEGORY_OPTIONS.some((c) => c.value === raw);
+  return valid ? (raw as MaintenanceCategory) : 'other';
+}
+
 export function getCategoryLabel(category: MaintenanceCategory): string {
-  const found = MAINTENANCE_CATEGORY_OPTIONS.find((c) => c.value === category);
+  const normalized = normalizeCategory(category);
+  const found = MAINTENANCE_CATEGORY_OPTIONS.find((c) => c.value === normalized);
   return found ? found.label : '기타';
 }
 
 export function getLogCategories(log: MaintenanceLog): MaintenanceCategory[] {
   if (Array.isArray(log.categories) && log.categories.length > 0) {
-    return Array.from(new Set(log.categories));
+    return Array.from(new Set(log.categories.map((c) => normalizeCategory(c))));
   }
-  return [log.category];
+  return [normalizeCategory(log.category)];
 }
 
 export function calculateTotalMaintenanceCost(logs: MaintenanceLog[]): number {

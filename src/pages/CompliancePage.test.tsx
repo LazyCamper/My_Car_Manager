@@ -289,8 +289,8 @@ describe('자동차 검사·보험 관리 화면 (CompliancePage) 통합 테스�
     });
     expect(within(insHistoryList).getByText(/DB손해보험/)).toBeInTheDocument();
 
-    // 3. 하단 탭에서 '홈'으로 이동 시 새로 등록한 보험(D-10)과 검사(D-20)가 가까운 순으로 즉시 반영됨
-    fireEvent.click(screen.getByRole('link', { name: /홈/ }));
+    // 3. 하단 탭에서 '나의 차고'로 이동 시 새로 등록한 보험(D-10)과 검사(D-20)가 가까운 순으로 즉시 반영됨
+    fireEvent.click(screen.getByRole('link', { name: /나의 차고/ }));
 
     await waitFor(() => {
       expect(

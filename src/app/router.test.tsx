@@ -91,7 +91,9 @@ describe('App routing & bottom tab navigation', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: '홈' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: '나의 차고' }),
+      ).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('link', { name: /정비/ }));

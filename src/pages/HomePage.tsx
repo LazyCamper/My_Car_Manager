@@ -12,6 +12,18 @@ import { buildUpcomingDueItems } from '../domain/services';
 import { isBackupOverdue } from '../features/backup';
 import { UpcomingDueSection } from '../features/dashboard';
 import { VehicleFormModal, VehicleSwitcher } from '../features/vehicle';
+import { formatDateDot } from '../shared/utils';
+
+function extractFallbackDateDot(isoOrDate?: string): string | undefined {
+  if (!isoOrDate) return undefined;
+  const trimmed = isoOrDate.trim();
+  const datePart = trimmed.includes('T') ? trimmed.split('T')[0] : trimmed;
+  try {
+    return formatDateDot(datePart);
+  } catch {
+    return undefined;
+  }
+}
 
 export const HomePage: React.FC = () => {
   const {
@@ -21,7 +33,6 @@ export const HomePage: React.FC = () => {
     selectVehicle,
     saveVehicle,
     deleteVehicle,
-    moveVehicle,
     reorderVehicles,
   } = useActiveVehicle();
   const { complianceRepo, maintenanceRepo, appMetaRepo } = useRepositories();
@@ -31,6 +42,9 @@ export const HomePage: React.FC = () => {
   const [lastBackupDate, setLastBackupDate] = useState<string | undefined>(
     undefined,
   );
+  const [mileageDatesByVehicle, setMileageDatesByVehicle] = useState<
+    Record<string, string>
+  >({});
 
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
@@ -68,6 +82,46 @@ export const HomePage: React.FC = () => {
   }, [appMetaRepo]);
 
   useEffect(() => {
+    let isMounted = true;
+    if (vehicles.length === 0) {
+      setMileageDatesByVehicle({});
+      return;
+    }
+
+    void Promise.all(
+      vehicles.map(async (v) => {
+        if (v.mileageUpdatedAt) {
+          return [v.id, v.mileageUpdatedAt] as const;
+        }
+        const logs = await maintenanceRepo.getByVehicle(v.id);
+        const withMileage = logs
+          .filter((l) => typeof l.mileage === 'number')
+          .sort((a, b) => b.date.localeCompare(a.date));
+        if (withMileage.length > 0) {
+          return [v.id, withMileage[0].date] as const;
+        }
+        const fallback =
+          extractFallbackDateDot(v.updatedAt) ??
+          extractFallbackDateDot(v.registrationDate);
+        return [v.id, fallback ?? ''] as const;
+      }),
+    ).then((entries) => {
+      if (!isMounted) return;
+      const nextMap: Record<string, string> = {};
+      for (const [id, dateStr] of entries) {
+        if (dateStr) {
+          nextMap[id] = dateStr;
+        }
+      }
+      setMileageDatesByVehicle(nextMap);
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [vehicles, maintenanceRepo]);
+
+  useEffect(() => {
     if (!activeVehicle) {
       setUpcomingItems([]);
       return;
@@ -99,10 +153,54 @@ export const HomePage: React.FC = () => {
 
   return (
     <section aria-labelledby="home-title" className="home-page">
-      <header className="page-header home-page-header">
-        <h1 id="home-title" className="page-title">
-          홈
-        </h1>
+      <header className="page-header home-page-header garage-hero-banner">
+        <div className="garage-hero-content">
+          <span className="garage-hero-eyebrow">MY DIGITAL GARAGE</span>
+          <h1 id="home-title" className="page-title garage-hero-title">
+            나의 차고
+          </h1>
+          <p className="garage-hero-subtitle">
+            {vehicles.length > 0
+              ? `보유 차량 ${vehicles.length}대 · 제원 및 정비 이력 통합 관리`
+              : '내 차의 제원과 정비·검사·보험 이력을 한곳에서 관리하세요'}
+          </p>
+        </div>
+        <svg
+          className="garage-hero-art"
+          viewBox="0 0 240 100"
+          fill="none"
+          aria-hidden="true"
+        >
+          <defs>
+            <linearGradient id="heroCarGrad" x1="0" y1="0" x2="240" y2="0" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#60a5fa" stopOpacity="0.15" />
+              <stop offset="55%" stopColor="#93c5fd" stopOpacity="0.65" />
+              <stop offset="100%" stopColor="#ffffff" stopOpacity="0.9" />
+            </linearGradient>
+            <linearGradient id="heroBeamGrad" x1="185" y1="58" x2="240" y2="42" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#60a5fa" stopOpacity="0.55" />
+              <stop offset="100%" stopColor="#60a5fa" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <polygon points="188,54 240,34 240,68 188,62" fill="url(#heroBeamGrad)" />
+          <path
+            d="M18 68 L34 66 L58 44 C72 33 92 29 118 29 L148 31 C162 32 174 39 186 48 L206 53 C214 55 218 60 218 66 L218 70 L18 70 Z"
+            stroke="url(#heroCarGrad)"
+            strokeWidth="2.4"
+            fill="rgba(59, 130, 246, 0.08)"
+          />
+          <path
+            d="M66 46 L108 34 L152 35 L176 48 Z"
+            stroke="rgba(191, 219, 254, 0.45)"
+            strokeWidth="1.5"
+            fill="rgba(147, 197, 253, 0.1)"
+          />
+          <circle cx="62" cy="70" r="13" fill="#0f172a" stroke="#93c5fd" strokeWidth="2.4" />
+          <circle cx="62" cy="70" r="5" fill="#60a5fa" />
+          <circle cx="176" cy="70" r="13" fill="#0f172a" stroke="#93c5fd" strokeWidth="2.4" />
+          <circle cx="176" cy="70" r="5" fill="#60a5fa" />
+          <line x1="4" y1="84" x2="234" y2="84" stroke="rgba(148, 163, 184, 0.28)" strokeWidth="1.2" strokeDasharray="6 6" />
+        </svg>
       </header>
 
       {showBackupBanner && (
@@ -152,10 +250,10 @@ export const HomePage: React.FC = () => {
           <VehicleSwitcher
             vehicles={vehicles}
             activeVehicle={activeVehicle}
+            mileageDatesByVehicle={mileageDatesByVehicle}
             onSelectVehicle={(id) => void selectVehicle(id)}
             onOpenAddModal={handleOpenAddModal}
             onOpenEditModal={handleOpenEditModal}
-            onMoveVehicle={(id, direction) => void moveVehicle(id, direction)}
             onReorderVehicles={(fromIndex, toIndex) =>
               void reorderVehicles(fromIndex, toIndex)
             }

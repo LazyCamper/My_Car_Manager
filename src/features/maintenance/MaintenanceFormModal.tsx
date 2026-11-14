@@ -47,6 +47,7 @@ export const MaintenanceFormModal: React.FC<MaintenanceFormModalProps> = ({
   const [selectedCategories, setSelectedCategories] = useState<
     MaintenanceCategory[]
   >(['engine_oil']);
+  const [hasTouchedCategories, setHasTouchedCategories] = useState(false);
   const [customTitle, setCustomTitle] = useState('엔진오일 교체');
   const [cost, setCost] = useState('');
   const [shopName, setShopName] = useState('');
@@ -76,6 +77,7 @@ export const MaintenanceFormModal: React.FC<MaintenanceFormModalProps> = ({
       );
       setCategory(initialLog.category);
       setSelectedCategories(getLogCategories(initialLog));
+      setHasTouchedCategories(true);
       setCustomTitle(initialLog.title);
       setCost(String(initialLog.cost));
       setShopName(initialLog.shopName ?? '');
@@ -108,6 +110,7 @@ export const MaintenanceFormModal: React.FC<MaintenanceFormModalProps> = ({
       setMileage(defaultMileage > 0 ? String(defaultMileage) : '');
       setCategory('engine_oil');
       setSelectedCategories(['engine_oil']);
+      setHasTouchedCategories(false);
       setCustomTitle('엔진오일 교체');
       setCost('');
       setShopName('');
@@ -126,20 +129,21 @@ export const MaintenanceFormModal: React.FC<MaintenanceFormModalProps> = ({
     return null;
   }
 
-  const handleCategoryChange = (nextCategory: MaintenanceCategory) => {
-    setCategory(nextCategory);
-    setSelectedCategories((prev) =>
-      prev.length <= 1 ? [nextCategory] : Array.from(new Set([nextCategory, ...prev])),
-    );
-    const option = MAINTENANCE_CATEGORY_OPTIONS.find(
-      (item) => item.value === nextCategory,
-    );
-    if (option) {
-      setCustomTitle(option.defaultTitle);
-    }
-  };
-
   const handleToggleExtraCategory = (targetCat: MaintenanceCategory) => {
+    const option = MAINTENANCE_CATEGORY_OPTIONS.find(
+      (item) => item.value === targetCat,
+    );
+
+    if (!hasTouchedCategories) {
+      setHasTouchedCategories(true);
+      setCategory(targetCat);
+      setSelectedCategories([targetCat]);
+      if (option && customTitle === '엔진오일 교체') {
+        setCustomTitle(option.defaultTitle);
+      }
+      return;
+    }
+
     setSelectedCategories((prev) => {
       const exists = prev.includes(targetCat);
       if (exists) {
@@ -360,27 +364,14 @@ export const MaintenanceFormModal: React.FC<MaintenanceFormModalProps> = ({
           </div>
 
           <div className="form-field">
-            <label htmlFor="maint-category" className="form-label">
-              정비 항목 분류 <span className="required-mark">*</span>
-            </label>
-            <select
-              id="maint-category"
-              className="form-input touch-target"
-              value={category}
-              onChange={(e) =>
-                handleCategoryChange(e.target.value as MaintenanceCategory)
-              }
-            >
-              {MAINTENANCE_CATEGORY_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+            <span className="form-label">
+              정비 항목 분류 (복수 선택 가능){' '}
+              <span className="required-mark">*</span>
+            </span>
             <div
               className="multi-category-chip-group"
               role="group"
-              aria-label="복수 정비 항목 태그 선택"
+              aria-label="정비 항목 분류"
             >
               {MAINTENANCE_CATEGORY_OPTIONS.map((opt) => {
                 const isSelected = selectedCategories.includes(opt.value);

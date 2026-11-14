@@ -1,10 +1,35 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Vehicle, VehicleInput } from '../../domain/models';
 import {
+  compressImageFile,
   formatDateDot,
   parseDateString,
   useModalViewport,
 } from '../../shared/utils';
+
+export const VEHICLE_BG_PRESETS = [
+  { value: 'auto', label: '자동 (차종 인식)' },
+  { value: 'sedan', label: '세단' },
+  { value: 'suv', label: 'SUV' },
+  { value: 'camper', label: '모터홈·캠핑카' },
+  { value: 'sports', label: '스포츠 쿠페' },
+  { value: 'none', label: '배경 없음' },
+] as const;
+
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (typeof reader.result === 'string') {
+        resolve(reader.result);
+      } else {
+        reject(new Error('이미지를 읽지 못했습니다.'));
+      }
+    };
+    reader.onerror = () => reject(new Error('이미지를 읽는 중 오류가 발생했습니다.'));
+    reader.readAsDataURL(blob);
+  });
+}
 
 export interface VehicleFormModalProps {
   isOpen: boolean;
@@ -47,7 +72,9 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
   const [options, setOptions] = useState('');
   const [tinting, setTinting] = useState('');
   const [memo, setMemo] = useState('');
+  const [backgroundImage, setBackgroundImage] = useState('auto');
   const [isSpecsExpanded, setIsSpecsExpanded] = useState(false);
+  const bgFileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
@@ -93,6 +120,7 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
       setOptions(initialVehicle.options ?? '');
       setTinting(initialVehicle.tinting ?? '');
       setMemo(initialVehicle.memo ?? '');
+      setBackgroundImage(initialVehicle.backgroundImage ?? 'auto');
       setIsSpecsExpanded(
         Boolean(
           initialVehicle.registrationDate ||
@@ -137,6 +165,7 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
       setOptions('');
       setTinting('');
       setMemo('');
+      setBackgroundImage('auto');
       setIsSpecsExpanded(false);
     }
   }, [isOpen, initialVehicle, currentYear]);
@@ -144,6 +173,32 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
   if (!isOpen) {
     return null;
   }
+
+  const isCustomPhotoBg = backgroundImage.startsWith('data:image/');
+
+  const handleBgPhotoSelect = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setErrorMessage(null);
+    try {
+      let targetBlob: Blob = file;
+      try {
+        targetBlob = await compressImageFile(file, {
+          maxLongEdge: 960,
+          quality: 0.72,
+        });
+      } catch {
+        targetBlob = file;
+      }
+      const dataUrl = await blobToDataUrl(targetBlob);
+      setBackgroundImage(dataUrl);
+    } catch {
+      setErrorMessage('배경 이미지를 불러오지 못했습니다.');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -234,6 +289,12 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
       parsedPrice = Math.round(numPrice);
     }
 
+    const roundedMileage = Math.round(parsedMileage);
+    const resolvedMileageDate =
+      !initialVehicle || roundedMileage !== initialVehicle.currentMileage
+        ? formatDateDot(new Date())
+        : initialVehicle.mileageUpdatedAt;
+
     setIsSubmitting(true);
     try {
       await onSubmit({
@@ -242,7 +303,8 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
         plateNumber: trimmedPlate,
         manufacturerModel: trimmedModel,
         modelYear: parsedYear,
-        currentMileage: Math.round(parsedMileage),
+        currentMileage: roundedMileage,
+        mileageUpdatedAt: resolvedMileageDate,
         registrationDate: formattedRegDate,
         purchaseDate: formattedPurchaseDate,
         purchaseMileage: parsedPurchaseMileage,
@@ -260,6 +322,10 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
         options: options.trim() || undefined,
         tinting: tinting.trim() || undefined,
         memo: memo.trim() || undefined,
+        backgroundImage:
+          backgroundImage && backgroundImage !== 'auto'
+            ? backgroundImage
+            : undefined,
       });
       onClose();
     } catch (err) {
@@ -394,6 +460,71 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
                 required
               />
             </div>
+          </div>
+
+          <div className="form-field vehicle-bg-picker-field">
+            <div className="vehicle-bg-picker-header">
+              <span className="form-label">카드 배경 이미지 · 스타일</span>
+              <input
+                ref={bgFileInputRef}
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                data-testid="vehicle-bg-file-input"
+                onChange={(e) => void handleBgPhotoSelect(e)}
+              />
+              <button
+                type="button"
+                className="btn btn-chip-primary"
+                onClick={() => bgFileInputRef.current?.click()}
+              >
+                📷 내 차 사진 업로드
+              </button>
+            </div>
+
+            {isCustomPhotoBg ? (
+              <div
+                className="vehicle-bg-custom-preview"
+                data-testid="vehicle-bg-custom-preview"
+              >
+                <div
+                  className="vehicle-bg-preview-thumb"
+                  style={{ backgroundImage: `url(${backgroundImage})` }}
+                />
+                <div className="vehicle-bg-preview-info">
+                  <strong>사용자 지정 차량 사진 적용됨</strong>
+                  <span>카드 배경에 선택한 사진이 표시됩니다.</span>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-chip"
+                  onClick={() => setBackgroundImage('auto')}
+                >
+                  기본 일러스트로 변경
+                </button>
+              </div>
+            ) : (
+              <div
+                className="multi-category-chip-group"
+                role="group"
+                aria-label="차량 카드 배경 스타일 선택"
+              >
+                {VEHICLE_BG_PRESETS.map((preset) => {
+                  const isActive = backgroundImage === preset.value;
+                  return (
+                    <button
+                      key={preset.value}
+                      type="button"
+                      className={`filter-chip${isActive ? ' active' : ''}`}
+                      onClick={() => setBackgroundImage(preset.value)}
+                      aria-pressed={isActive}
+                    >
+                      {preset.label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <div className="vehicle-specs-toggle-box">

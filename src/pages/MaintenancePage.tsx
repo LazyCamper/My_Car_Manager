@@ -71,6 +71,7 @@ export const MaintenancePage: React.FC = () => {
         await saveVehicle({
           ...activeVehicle,
           currentMileage: data.mileage,
+          mileageUpdatedAt: data.date,
         });
       }
       await loadLogs(activeVehicle.id);

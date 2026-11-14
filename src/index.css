@@ -72,12 +72,17 @@ body {
   border: 0;
 }
 
-/* 모바일 중심 컨테이너 */
+/* 모바일 중심 컨테이너 (쇼룸 도트·그라데이션 배경 텍스처 적용) */
 .app-shell {
   width: 100%;
   max-width: var(--max-mobile-width);
   min-height: 100dvh;
   background-color: var(--color-bg);
+  background-image:
+    radial-gradient(circle at 12% 4%, rgba(49, 130, 246, 0.08) 0%, transparent 45%),
+    radial-gradient(circle at 88% 18%, rgba(99, 102, 241, 0.06) 0%, transparent 42%),
+    radial-gradient(rgba(148, 163, 184, 0.22) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 20px 20px;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -86,7 +91,7 @@ body {
 
 .app-main {
   flex: 1;
-  padding: 24px 18px calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 36px);
+  padding: 20px 18px calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 36px);
   overflow-y: auto;
 }
 
@@ -100,6 +105,72 @@ body {
   letter-spacing: -0.03em;
   line-height: 1.3;
   color: var(--color-text);
+}
+
+/* 나의 차고 상단 오토모티브 쇼룸 히어로 배너 */
+.garage-hero-banner {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  padding: 22px 20px;
+  margin-bottom: 22px;
+  background:
+    radial-gradient(circle at 85% 20%, rgba(59, 130, 246, 0.35) 0%, transparent 55%),
+    linear-gradient(135deg, #0b1120 0%, #172554 58%, #1e3a8a 100%);
+  color: #ffffff;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.garage-hero-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 24px 24px;
+  pointer-events: none;
+}
+
+.garage-hero-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.garage-hero-eyebrow {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #93c5fd;
+}
+
+.garage-hero-title {
+  color: #ffffff;
+  font-size: 1.55rem;
+}
+
+.garage-hero-subtitle {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #cbd5e1;
+  margin-top: 2px;
+}
+
+.garage-hero-art {
+  position: absolute;
+  right: -8px;
+  bottom: -4px;
+  width: 175px;
+  height: auto;
+  opacity: 0.88;
+  pointer-events: none;
 }
 
 /* 하단 탭 내비게이션 (플로팅 글래스모피즘 독 스타일) */
@@ -377,66 +448,20 @@ textarea {
   flex-shrink: 0;
 }
 
-.vehicle-card-action-bar {
+.vehicle-card-footer-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding-top: 10px;
-  border-top: 1px solid var(--color-border-subtle);
-}
-
-.owned-vehicle-card.selected .vehicle-card-action-bar {
-  border-top-color: rgba(255, 255, 255, 0.12);
-}
-
-.vehicle-reorder-btns {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.btn-reorder {
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  border: 1px solid var(--color-border);
-  background-color: #f8fafc;
-  color: #4e5968;
-  font-size: 0.75rem;
-  font-weight: 800;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.15s ease;
-}
-
-.btn-reorder:hover:not(:disabled) {
-  background-color: #e5e8eb;
-  color: var(--color-text);
-}
-
-.btn-reorder:disabled {
-  opacity: 0.32;
-  cursor: not-allowed;
-}
-
-.owned-vehicle-card.selected .btn-reorder {
-  background-color: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.16);
-  color: #e2e8f0;
-}
-
-.owned-vehicle-card.selected .btn-reorder:hover:not(:disabled) {
-  background-color: rgba(255, 255, 255, 0.2);
-  color: #ffffff;
 }
 
 .vehicle-card-edit-btn {
-  min-height: 36px;
-  padding: 6px 14px;
-  font-size: 0.82rem;
+  flex-shrink: 0;
+  margin-left: auto;
+  min-height: 40px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  font-size: 0.84rem;
 }
 
 .owned-vehicle-card.selected .vehicle-card-edit-btn {
@@ -598,6 +623,126 @@ textarea {
   color: #60a5fa;
 }
 
+.vehicle-mileage-date {
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+.owned-vehicle-card.selected .vehicle-mileage-date {
+  color: #93c5fd;
+  opacity: 0.9;
+}
+
+/* 차량 카드 사용자 지정 배경 사진 레이어 */
+.vehicle-card-photo-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.vehicle-card-photo-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    rgba(255, 255, 255, 0.92) 0%,
+    rgba(255, 255, 255, 0.82) 55%,
+    rgba(255, 255, 255, 0.62) 100%
+  );
+}
+
+.owned-vehicle-card.selected .vehicle-card-photo-bg::after {
+  background: linear-gradient(
+    115deg,
+    rgba(15, 23, 42, 0.88) 0%,
+    rgba(15, 23, 42, 0.76) 55%,
+    rgba(23, 37, 84, 0.6) 100%
+  );
+}
+
+/* 차량 등록/수정 모달 배경 이미지 선택 영역 */
+.vehicle-bg-picker-field {
+  background-color: #f8fafc;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 16px;
+  padding: 12px 14px;
+}
+
+.vehicle-bg-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.vehicle-bg-custom-preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 8px;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+.vehicle-bg-preview-thumb {
+  width: 64px;
+  height: 44px;
+  border-radius: 8px;
+  background-size: cover;
+  background-position: center;
+  flex-shrink: 0;
+  border: 1px solid var(--color-border);
+}
+
+.vehicle-bg-preview-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+.vehicle-bg-preview-info strong {
+  font-size: 0.84rem;
+  color: var(--color-text);
+}
+
+/* 차량 카드 우측 하단 실루엣 워터마크 일러스트 */
+.vehicle-card-watermark {
+  position: absolute;
+  right: 12px;
+  bottom: 42px;
+  width: 145px;
+  height: auto;
+  color: #64748b;
+  opacity: 0.1;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.owned-vehicle-card.selected .vehicle-card-watermark {
+  color: #93c5fd;
+  opacity: 0.16;
+}
+
+.owned-vehicle-card .vehicle-summary-row,
+.owned-vehicle-card .vehicle-detail-specs-wrapper {
+  position: relative;
+  z-index: 1;
+}
+
 /* 차량 상세 제원 아코디언 */
 .vehicle-detail-specs-wrapper {
   border-top: 1px solid var(--color-border-subtle);
@@ -612,11 +757,13 @@ textarea {
 }
 
 .vehicle-specs-expand-btn {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
+  min-height: 40px;
   background-color: #f2f4f6;
   border: 1px solid transparent;
   border-radius: 12px;
-  padding: 9px 12px;
+  padding: 8px 12px;
   font-size: 0.84rem;
   font-weight: 700;
   color: #4e5968;

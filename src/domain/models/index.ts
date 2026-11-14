@@ -9,6 +9,7 @@ export interface Vehicle {
   manufacturerModel: string; // 제조사/모델
   modelYear: number; // 연식
   currentMileage: number; // 현재 주행거리 (km)
+  mileageUpdatedAt?: string; // 주행거리 기준일 (YYYY.MM.DD)
   registrationDate?: string; // 최초 등록일 (YYYY.MM.DD)
   purchaseDate?: string; // 구매/인수일 (YYYY.MM.DD)
   purchaseMileage?: number; // 구매/인수 당시 주행거리 (km)
@@ -26,6 +27,7 @@ export interface Vehicle {
   options?: string; // 장착 옵션 (블랙박스, 유리막, PPF, 하이패스 등)
   tinting?: string; // 틴팅 시공 내역
   memo?: string; // 차량 관리 메모 (내비게이션 계정, 쿠폰 잔여 등)
+  backgroundImage?: string; // 차량 카드 배경 (프리셋 키 또는 data:image/... Data URL)
   displayOrder: number;
   createdAt: string;
   updatedAt: string;
@@ -38,6 +40,7 @@ export type VehicleInput = {
   manufacturerModel: string;
   modelYear: number;
   currentMileage: number;
+  mileageUpdatedAt?: string;
   registrationDate?: string;
   purchaseDate?: string;
   purchaseMileage?: number;
@@ -55,6 +58,7 @@ export type VehicleInput = {
   options?: string;
   tinting?: string;
   memo?: string;
+  backgroundImage?: string;
   displayOrder?: number;
 };
 
@@ -66,7 +70,6 @@ export type MaintenanceCategory =
   | 'filter'
   | 'repair'
   | 'accident_repair'
-  | 'camper_as'
   | 'other';
 
 export interface MaintenanceLog {
