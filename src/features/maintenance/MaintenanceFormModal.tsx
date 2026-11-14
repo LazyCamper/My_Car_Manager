@@ -5,7 +5,11 @@ import {
   PhotoAttachmentField,
   PhotoDraftItem,
 } from '../../shared/components/PhotoAttachmentField';
-import { formatDateDot, parseDateString } from '../../shared/utils';
+import {
+  formatDateDot,
+  parseDateString,
+  useModalViewport,
+} from '../../shared/utils';
 import { MAINTENANCE_CATEGORY_OPTIONS } from './constants';
 
 export type MaintenanceFormSubmitData = Omit<
@@ -50,6 +54,7 @@ export const MaintenanceFormModal: React.FC<MaintenanceFormModalProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { sheetStyle, handleFieldFocusCapture } = useModalViewport(isOpen);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -184,6 +189,7 @@ export const MaintenanceFormModal: React.FC<MaintenanceFormModalProps> = ({
     }
 
     setIsSubmitting(true);
+    const newlySavedIds: string[] = [];
     try {
       const originalIds = initialLog?.attachmentIds ?? [];
       const keptExistingIds = photos
@@ -192,10 +198,6 @@ export const MaintenanceFormModal: React.FC<MaintenanceFormModalProps> = ({
       const removedIds = originalIds.filter(
         (id) => !keptExistingIds.includes(id),
       );
-
-      if (removedIds.length > 0) {
-        await attachmentRepo.deleteMany(removedIds);
-      }
 
       const finalAttachmentIds: string[] = [];
       for (const item of photos) {
@@ -208,6 +210,7 @@ export const MaintenanceFormModal: React.FC<MaintenanceFormModalProps> = ({
             blob: item.blob,
             fileName: item.fileName,
           });
+          newlySavedIds.push(savedAtt.id);
           finalAttachmentIds.push(savedAtt.id);
         }
       }
@@ -227,8 +230,17 @@ export const MaintenanceFormModal: React.FC<MaintenanceFormModalProps> = ({
         isDueCompleted: initialLog?.isDueCompleted ?? false,
         attachmentIds: finalAttachmentIds,
       });
+
+      // 본문 저장이 성공한 뒤에만 제거된 기존 사진을 삭제하여 실패 시 기존 데이터 유실 방지
+      if (removedIds.length > 0) {
+        await attachmentRepo.deleteMany(removedIds);
+      }
+
       onClose();
     } catch (err) {
+      if (newlySavedIds.length > 0) {
+        await attachmentRepo.deleteMany(newlySavedIds).catch(() => undefined);
+      }
       setErrorMessage(
         err instanceof Error
           ? err.message
@@ -257,7 +269,11 @@ export const MaintenanceFormModal: React.FC<MaintenanceFormModalProps> = ({
       aria-modal="true"
       aria-labelledby="maintenance-modal-title"
     >
-      <div className="modal-sheet">
+      <div
+        className="modal-sheet"
+        style={sheetStyle}
+        onFocusCapture={handleFieldFocusCapture}
+      >
         <header className="modal-header">
           <h2 id="maintenance-modal-title" className="modal-title">
             {isEditMode ? '정비 내역 상세 · 수정' : '정비 내역 등록'}
@@ -287,6 +303,7 @@ export const MaintenanceFormModal: React.FC<MaintenanceFormModalProps> = ({
               <input
                 id="maint-date"
                 type="text"
+                inputMode="numeric"
                 className="form-input touch-target"
                 placeholder="YYYY.MM.DD"
                 value={date}
@@ -387,6 +404,7 @@ export const MaintenanceFormModal: React.FC<MaintenanceFormModalProps> = ({
             <input
               id="maint-next-due"
               type="text"
+              inputMode="numeric"
               className="form-input touch-target"
               placeholder="예: 2027.05.14"
               value={nextDueDate}

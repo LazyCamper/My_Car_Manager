@@ -174,20 +174,27 @@ export class DexieComplianceRepository implements IComplianceRepository {
   }
 
   async deleteInspection(id: string): Promise<void> {
-    await this.db.transaction('rw', this.db.inspections, async () => {
-      const target = await this.db.inspections.get(id);
-      await this.db.inspections.delete(id);
-      if (target?.isCurrent) {
-        const remaining = await this.db.inspections
-          .where('vehicleId')
-          .equals(target.vehicleId)
-          .toArray();
-        if (remaining.length > 0) {
-          remaining.sort((a, b) => b.expiryDate.localeCompare(a.expiryDate));
-          await this.db.inspections.put({ ...remaining[0], isCurrent: true });
+    await this.db.transaction(
+      'rw',
+      [this.db.inspections, this.db.attachments],
+      async () => {
+        const target = await this.db.inspections.get(id);
+        if (target?.attachmentIds.length) {
+          await this.db.attachments.bulkDelete(target.attachmentIds);
         }
-      }
-    });
+        await this.db.inspections.delete(id);
+        if (target?.isCurrent) {
+          const remaining = await this.db.inspections
+            .where('vehicleId')
+            .equals(target.vehicleId)
+            .toArray();
+          if (remaining.length > 0) {
+            remaining.sort((a, b) => b.expiryDate.localeCompare(a.expiryDate));
+            await this.db.inspections.put({ ...remaining[0], isCurrent: true });
+          }
+        }
+      },
+    );
   }
 
   async getCurrentInsurance(vehicleId: string): Promise<Insurance | undefined> {
@@ -217,38 +224,55 @@ export class DexieComplianceRepository implements IComplianceRepository {
       ...input,
       id: input.id ?? generateId(),
     };
-    await this.db.transaction('rw', this.db.insurances, async () => {
-      if (record.isCurrent) {
-        const existing = await this.db.insurances
-          .where('vehicleId')
-          .equals(record.vehicleId)
-          .toArray();
-        for (const item of existing) {
-          if (item.id !== record.id && item.isCurrent) {
-            await this.db.insurances.put({ ...item, isCurrent: false });
+    await this.db.transaction(
+      'rw',
+      [this.db.insurances, this.db.attachments],
+      async () => {
+        if (record.isCurrent) {
+          const existing = await this.db.insurances
+            .where('vehicleId')
+            .equals(record.vehicleId)
+            .toArray();
+          for (const item of existing) {
+            if (item.id !== record.id && item.isCurrent) {
+              await this.db.insurances.put({ ...item, isCurrent: false });
+            }
           }
         }
-      }
-      await this.db.insurances.put(record);
-    });
+        await this.db.insurances.put(record);
+        if (record.attachmentIds.length > 0) {
+          await this.db.attachments
+            .where('id')
+            .anyOf(record.attachmentIds)
+            .modify({ parentId: record.id });
+        }
+      },
+    );
     return record;
   }
 
   async deleteInsurance(id: string): Promise<void> {
-    await this.db.transaction('rw', this.db.insurances, async () => {
-      const target = await this.db.insurances.get(id);
-      await this.db.insurances.delete(id);
-      if (target?.isCurrent) {
-        const remaining = await this.db.insurances
-          .where('vehicleId')
-          .equals(target.vehicleId)
-          .toArray();
-        if (remaining.length > 0) {
-          remaining.sort((a, b) => b.endDate.localeCompare(a.endDate));
-          await this.db.insurances.put({ ...remaining[0], isCurrent: true });
+    await this.db.transaction(
+      'rw',
+      [this.db.insurances, this.db.attachments],
+      async () => {
+        const target = await this.db.insurances.get(id);
+        if (target?.attachmentIds.length) {
+          await this.db.attachments.bulkDelete(target.attachmentIds);
         }
-      }
-    });
+        await this.db.insurances.delete(id);
+        if (target?.isCurrent) {
+          const remaining = await this.db.insurances
+            .where('vehicleId')
+            .equals(target.vehicleId)
+            .toArray();
+          if (remaining.length > 0) {
+            remaining.sort((a, b) => b.endDate.localeCompare(a.endDate));
+            await this.db.insurances.put({ ...remaining[0], isCurrent: true });
+          }
+        }
+      },
+    );
   }
 }
 
@@ -286,7 +310,19 @@ export class DexieMaintenanceRepository implements IMaintenanceRepository {
       id: input.id ?? generateId(),
       createdAt: existing?.createdAt ?? now,
     };
-    await this.db.maintenanceLogs.put(record);
+    await this.db.transaction(
+      'rw',
+      [this.db.maintenanceLogs, this.db.attachments],
+      async () => {
+        await this.db.maintenanceLogs.put(record);
+        if (record.attachmentIds.length > 0) {
+          await this.db.attachments
+            .where('id')
+            .anyOf(record.attachmentIds)
+            .modify({ parentId: record.id });
+        }
+      },
+    );
     return record;
   }
 

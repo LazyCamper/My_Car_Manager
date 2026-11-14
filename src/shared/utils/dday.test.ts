@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  addYearsClamped,
   calculateDday,
   formatDateDot,
   parseDateString,
@@ -64,7 +65,17 @@ describe('D-day 유틸 함수 테스트 (calculateDday)', () => {
 
   it('유효하지 않은 날짜 문자열은 에러를 발생시킨다', () => {
     expect(() => parseDateString('2026.02.30')).toThrow();
+    expect(() => parseDateString('2025.02.29')).toThrow(); // 평년 2월 29일 거부
+    expect(() => parseDateString('26.11.14')).toThrow(); // 2자리 연도 거부
+    expect(() => parseDateString('99999.01.01')).toThrow(); // 5자리 연도 거부
     expect(() => parseDateString('invalid-date')).toThrow();
+  });
+
+  it('윤년 2월 29일(2028.02.29) 파싱 및 연도 가산 시 말일(2월 28일)로 정확히 보정한다', () => {
+    expect(formatDateDot('20280229')).toBe('2028.02.29');
+    expect(formatDateDot(addYearsClamped('2028.02.29', 1))).toBe('2029.02.28');
+    expect(formatDateDot(addYearsClamped('2028.02.29', 2))).toBe('2030.02.28');
+    expect(formatDateDot(addYearsClamped('2028.02.29', 4))).toBe('2032.02.29');
   });
 });
 

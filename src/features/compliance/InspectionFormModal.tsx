@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Inspection } from '../../domain/models';
-import { formatDateDot, parseDateString } from '../../shared/utils';
+import {
+  addYearsClamped,
+  formatDateDot,
+  parseDateString,
+  useModalViewport,
+} from '../../shared/utils';
 
 export type InspectionFormSubmitData = Omit<Inspection, 'id'> & {
   id?: string;
@@ -35,6 +40,7 @@ export const InspectionFormModal: React.FC<InspectionFormModalProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { sheetStyle, handleFieldFocusCapture } = useModalViewport(isOpen);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -50,11 +56,7 @@ export const InspectionFormModal: React.FC<InspectionFormModalProps> = ({
       setIsCurrent(initialInspection.isCurrent);
     } else {
       const today = new Date();
-      const twoYearsLater = new Date(
-        today.getFullYear() + 2,
-        today.getMonth(),
-        today.getDate(),
-      );
+      const twoYearsLater = addYearsClamped(today, 2);
       setInspectionDate(formatDateDot(today));
       setExpiryDate(formatDateDot(twoYearsLater));
       setStationName('');
@@ -151,7 +153,11 @@ export const InspectionFormModal: React.FC<InspectionFormModalProps> = ({
       aria-modal="true"
       aria-labelledby="inspection-modal-title"
     >
-      <div className="modal-sheet">
+      <div
+        className="modal-sheet"
+        style={sheetStyle}
+        onFocusCapture={handleFieldFocusCapture}
+      >
         <header className="modal-header">
           <h2 id="inspection-modal-title" className="modal-title">
             {isEditMode ? '자동차 검사 수정' : '자동차 검사 등록'}
@@ -181,6 +187,7 @@ export const InspectionFormModal: React.FC<InspectionFormModalProps> = ({
               <input
                 id="insp-date"
                 type="text"
+                inputMode="numeric"
                 className="form-input touch-target"
                 placeholder="YYYY.MM.DD"
                 value={inspectionDate}
@@ -196,6 +203,7 @@ export const InspectionFormModal: React.FC<InspectionFormModalProps> = ({
               <input
                 id="insp-expiry"
                 type="text"
+                inputMode="numeric"
                 className="form-input touch-target"
                 placeholder="YYYY.MM.DD"
                 value={expiryDate}

@@ -1,6 +1,8 @@
 import { DdayUrgencyStatus } from '../../domain/models';
 
 export const URGENT_THRESHOLD_DAYS = 30;
+export const MIN_VALID_YEAR = 1900;
+export const MAX_VALID_YEAR = 2100;
 
 export interface DdayResult {
   daysRemaining: number;
@@ -11,14 +13,22 @@ export interface DdayResult {
 }
 
 /**
- * 'YYYY.MM.DD' 또는 'YYYY-MM-DD' 형식의 문자열을 로컬 자정(00:00:00) Date 객체로 변환합니다.
+ * 'YYYY.MM.DD', 'YYYY-MM-DD', 또는 8자리 숫자 'YYYYMMDD' 형식의 문자열을
+ * 로컬 자정(00:00:00) Date 객체로 변환합니다.
+ * - 연도는 반드시 4자리(1900~2100)여야 합니다.
  */
 export function parseDateString(dateStr: string): Date {
-  const normalized = dateStr.trim().replace(/-/g, '.');
-  const parts = normalized.split('.');
-  if (parts.length !== 3) {
+  const trimmed = dateStr.trim();
+  const compactMatch = /^(\d{4})(\d{2})(\d{2})$/.exec(trimmed);
+  const normalized = compactMatch
+    ? `${compactMatch[1]}.${compactMatch[2]}.${compactMatch[3]}`
+    : trimmed.replace(/-/g, '.');
+
+  if (!/^\d{4}\.\d{1,2}\.\d{1,2}$/.test(normalized)) {
     throw new Error(`Invalid date format: ${dateStr}. Expected YYYY.MM.DD`);
   }
+
+  const parts = normalized.split('.');
   const year = Number(parts[0]);
   const month = Number(parts[1]);
   const day = Number(parts[2]);
@@ -27,6 +37,8 @@ export function parseDateString(dateStr: string): Date {
     !Number.isInteger(year) ||
     !Number.isInteger(month) ||
     !Number.isInteger(day) ||
+    year < MIN_VALID_YEAR ||
+    year > MAX_VALID_YEAR ||
     month < 1 ||
     month > 12 ||
     day < 1 ||
@@ -44,6 +56,37 @@ export function parseDateString(dateStr: string): Date {
     throw new Error(`Non-existent calendar date: ${dateStr}`);
   }
   return date;
+}
+
+/**
+ * 기준일(dateInput)에 yearsToAdd년을 더하되,
+ * 윤년 2월 29일에서 평년으로 이동할 때 3월 1일로 밀리지 않고 2월 28일(해당 월 말일)로 보정합니다.
+ */
+export function addYearsClamped(
+  dateInput: Date | string,
+  yearsToAdd: number,
+): Date {
+  const base =
+    typeof dateInput === 'string'
+      ? parseDateString(dateInput)
+      : new Date(
+          dateInput.getFullYear(),
+          dateInput.getMonth(),
+          dateInput.getDate(),
+          0,
+          0,
+          0,
+          0,
+        );
+
+  const targetYear = base.getFullYear() + yearsToAdd;
+  const month = base.getMonth();
+  const day = base.getDate();
+
+  const lastDayOfTargetMonth = new Date(targetYear, month + 1, 0).getDate();
+  const clampedDay = Math.min(day, lastDayOfTargetMonth);
+
+  return new Date(targetYear, month, clampedDay, 0, 0, 0, 0);
 }
 
 /**

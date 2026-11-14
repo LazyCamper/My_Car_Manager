@@ -5,7 +5,12 @@ import {
   PhotoAttachmentField,
   PhotoDraftItem,
 } from '../../shared/components/PhotoAttachmentField';
-import { formatDateDot, parseDateString } from '../../shared/utils';
+import {
+  addYearsClamped,
+  formatDateDot,
+  parseDateString,
+  useModalViewport,
+} from '../../shared/utils';
 
 export type InsuranceFormSubmitData = Omit<Insurance, 'id'> & {
   id?: string;
@@ -44,6 +49,7 @@ export const InsuranceFormModal: React.FC<InsuranceFormModalProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { sheetStyle, handleFieldFocusCapture } = useModalViewport(isOpen);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -89,11 +95,7 @@ export const InsuranceFormModal: React.FC<InsuranceFormModalProps> = ({
       }
     } else {
       const today = new Date();
-      const oneYearLater = new Date(
-        today.getFullYear() + 1,
-        today.getMonth(),
-        today.getDate(),
-      );
+      const oneYearLater = addYearsClamped(today, 1);
       setCompanyName('');
       setProductName('');
       setStartDate(formatDateDot(today));
@@ -159,6 +161,7 @@ export const InsuranceFormModal: React.FC<InsuranceFormModalProps> = ({
     }
 
     setIsSubmitting(true);
+    const newlySavedIds: string[] = [];
     try {
       const originalIds = initialInsurance?.attachmentIds ?? [];
       const keptExistingIds = photos
@@ -167,10 +170,6 @@ export const InsuranceFormModal: React.FC<InsuranceFormModalProps> = ({
       const removedIds = originalIds.filter(
         (id) => !keptExistingIds.includes(id),
       );
-
-      if (removedIds.length > 0) {
-        await attachmentRepo.deleteMany(removedIds);
-      }
 
       const finalAttachmentIds: string[] = [];
       for (const item of photos) {
@@ -183,6 +182,7 @@ export const InsuranceFormModal: React.FC<InsuranceFormModalProps> = ({
             blob: item.blob,
             fileName: item.fileName,
           });
+          newlySavedIds.push(savedAtt.id);
           finalAttachmentIds.push(savedAtt.id);
         }
       }
@@ -200,8 +200,17 @@ export const InsuranceFormModal: React.FC<InsuranceFormModalProps> = ({
         attachmentIds: finalAttachmentIds,
         isCurrent,
       });
+
+      // 본문 저장이 성공한 뒤에만 제거된 기존 사진을 삭제하여 실패 시 기존 데이터 유실 방지
+      if (removedIds.length > 0) {
+        await attachmentRepo.deleteMany(removedIds);
+      }
+
       onClose();
     } catch (err) {
+      if (newlySavedIds.length > 0) {
+        await attachmentRepo.deleteMany(newlySavedIds).catch(() => undefined);
+      }
       setErrorMessage(
         err instanceof Error
           ? err.message
@@ -230,7 +239,11 @@ export const InsuranceFormModal: React.FC<InsuranceFormModalProps> = ({
       aria-modal="true"
       aria-labelledby="insurance-modal-title"
     >
-      <div className="modal-sheet">
+      <div
+        className="modal-sheet"
+        style={sheetStyle}
+        onFocusCapture={handleFieldFocusCapture}
+      >
         <header className="modal-header">
           <h2 id="insurance-modal-title" className="modal-title">
             {isEditMode ? '자동차 보험 수정' : '자동차 보험 등록'}
@@ -291,6 +304,7 @@ export const InsuranceFormModal: React.FC<InsuranceFormModalProps> = ({
               <input
                 id="ins-start"
                 type="text"
+                inputMode="numeric"
                 className="form-input touch-target"
                 placeholder="YYYY.MM.DD"
                 value={startDate}
@@ -306,6 +320,7 @@ export const InsuranceFormModal: React.FC<InsuranceFormModalProps> = ({
               <input
                 id="ins-end"
                 type="text"
+                inputMode="numeric"
                 className="form-input touch-target"
                 placeholder="YYYY.MM.DD"
                 value={endDate}

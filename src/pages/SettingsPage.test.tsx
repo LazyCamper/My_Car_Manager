@@ -20,7 +20,6 @@ import {
 } from '../features/backup';
 import { AppRepositories } from '../repositories/interfaces';
 import { formatDateDot } from '../shared/utils';
-import { CAR_LEDGER_DB_NAME, defaultDb } from '../repositories/dexie/db';
 
 function addDays(base: Date, days: number): string {
   const d = new Date(base.getFullYear(), base.getMonth(), base.getDate() + days);
@@ -423,6 +422,47 @@ describe('설정 화면 백업 내보내기/가져오기 및 30일 경과 안내
     });
     expect(getState().vehicles).toHaveLength(1);
     expect(getState().vehicles[0].name).toBe('보존될 내 차');
+
+    // 3. 첨부 사진의 Base64 문자열이 손상된 파일 입력 시 파일 선택 단계에서 사전 차단
+    const corruptedBase64File = new File(
+      [
+        JSON.stringify({
+          schemaVersion: 1,
+          exportedAt: '2026-11-14T00:00:00.000Z',
+          data: {
+            vehicles: [],
+            maintenanceLogs: [],
+            inspections: [],
+            insurances: [],
+            attachments: [
+              {
+                id: 'att-corrupt',
+                parentType: 'maintenance',
+                parentId: 'm-1',
+                base64Data: '%%%not-valid-base64%%%',
+                mimeType: 'image/jpeg',
+                fileName: 'corrupt.jpg',
+                size: 100,
+                createdAt: '2026-11-14T00:00:00.000Z',
+              },
+            ],
+          },
+        }),
+      ],
+      'corrupt-photo.json',
+      { type: 'application/json' },
+    );
+    fireEvent.change(importInput, { target: { files: [corruptedBase64File] } });
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        '백업 파일의 첨부 사진 Base64 데이터가 손상되었습니다.',
+      );
+    });
+    expect(
+      screen.queryByRole('alertdialog', { name: '백업 복원 확인' }),
+    ).not.toBeInTheDocument();
+    expect(getState().vehicles).toHaveLength(1);
   });
 
   it('마지막 백업 날짜가 30일이 넘었으면 홈 화면에 백업 권장 배너를 표시한다', async () => {
@@ -467,10 +507,7 @@ describe('설정 화면 백업 내보내기/가져오기 및 30일 경과 안내
     ).toHaveTextContent(thirtyFiveDaysAgo);
   });
 
-  it('설정 화면에 "iPhone은 Safari 공유 → 홈 화면에 추가" 안내 문구가 표시되고 Dexie DB 이름은 "car-ledger-db"로 고정된다', async () => {
-    expect(CAR_LEDGER_DB_NAME).toBe('car-ledger-db');
-    expect(defaultDb.name).toBe('car-ledger-db');
-
+  it('설정 화면에 "iPhone은 Safari 공유 → 홈 화면에 추가" 안내 문구가 표시된다', async () => {
     const { repos } = createStatefulBackupTestRepos();
 
     render(

@@ -191,6 +191,31 @@ describe('홈 화면 및 차량 등록/수정/전환 통합 테스트', () => {
     await waitFor(() => {
       expect(screen.getByText('25,000km')).toBeInTheDocument();
     });
+
+    // 차량 삭제 시 즉시 삭제되지 않고 2단계 삭제 확인창이 표시되는지 테스트
+    fireEvent.click(screen.getByRole('button', { name: '차량 수정' }));
+    fireEvent.click(screen.getByRole('button', { name: '차량 삭제' }));
+
+    expect(
+      screen.getByRole('alertdialog', { name: '차량 삭제 확인' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/연관된 모든 정비·검사·보험 기록과 첨부 사진이 함께 삭제됩니다/),
+    ).toBeInTheDocument();
+
+    // 삭제 취소 시 모달이 유지됨
+    fireEvent.click(screen.getByRole('button', { name: '삭제 취소' }));
+    expect(
+      screen.queryByRole('alertdialog', { name: '차량 삭제 확인' }),
+    ).not.toBeInTheDocument();
+
+    // 다시 차량 삭제 -> 삭제 확인 클릭 시 실제로 삭제되어 빈 차량 안내로 돌아감
+    fireEvent.click(screen.getByRole('button', { name: '차량 삭제' }));
+    fireEvent.click(screen.getByRole('button', { name: '삭제 확인' }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('empty-vehicle-state')).toBeInTheDocument();
+    });
   });
 
   it('다중 차량 전환 시 각 차량의 다가오는 만기(만기 지남/30일 이내 강조)를 가까운 순으로 표시한다', async () => {

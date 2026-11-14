@@ -87,7 +87,13 @@ export const HomePage: React.FC = () => {
     await saveVehicle(input);
   };
 
-  const showBackupBanner = isBackupOverdue(lastBackupDate);
+  const earliestVehicleCreatedAt =
+    vehicles.length > 0 ? vehicles[0].createdAt : undefined;
+  const showBackupBanner = isBackupOverdue(
+    lastBackupDate,
+    new Date(),
+    earliestVehicleCreatedAt,
+  );
 
   return (
     <section aria-labelledby="home-title" className="home-page">
@@ -107,7 +113,9 @@ export const HomePage: React.FC = () => {
           <div className="backup-reminder-text">
             <strong>백업이 필요합니다 (30일 경과)</strong>
             <span>
-              마지막 백업 날짜({lastBackupDate})로부터 30일이 지났습니다. 데이터 유실 방지를 위해 백업해 주세요.
+              {lastBackupDate
+                ? `마지막 백업 날짜(${lastBackupDate})로부터 30일이 지났습니다. 데이터 유실 방지를 위해 백업해 주세요.`
+                : '차량 등록 후 30일 이상 백업하지 않았습니다. 데이터 유실 방지를 위해 첫 백업을 진행해 주세요.'}
             </span>
           </div>
           <Link to="/settings" className="btn btn-chip-primary touch-target">

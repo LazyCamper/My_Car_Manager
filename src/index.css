@@ -997,8 +997,8 @@ textarea {
 .photo-thumb-list {
   list-style: none;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
 }
 
 .photo-thumb-item {
@@ -1028,15 +1028,15 @@ textarea {
 
 .photo-thumb-delete-btn {
   position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 24px;
-  height: 24px;
+  top: 6px;
+  right: 6px;
+  width: 32px;
+  height: 32px;
   border-radius: 999px;
   border: none;
-  background-color: rgba(15, 23, 42, 0.75);
+  background-color: rgba(15, 23, 42, 0.78);
   color: #ffffff;
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   font-weight: 700;
   cursor: pointer;
   display: flex;
@@ -1316,6 +1316,25 @@ textarea {
   padding: 6px 12px;
   font-size: 0.825rem;
 }
+
+/* 작은 모바일 화면 (폭 360px 이하) 대응 */
+@media (max-width: 360px) {
+  .form-row-2col,
+  .compliance-info-grid,
+  .photo-upload-buttons {
+    grid-template-columns: 1fr;
+  }
+
+  .vehicle-summary-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .vehicle-mileage-box {
+    text-align: left;
+  }
+}
+
 
 
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Vehicle, VehicleInput } from '../../domain/models';
+import { useModalViewport } from '../../shared/utils';
 
 export interface VehicleFormModalProps {
   isOpen: boolean;
@@ -25,11 +26,14 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
   const [modelYear, setModelYear] = useState(String(currentYear));
   const [currentMileage, setCurrentMileage] = useState('0');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { sheetStyle, handleFieldFocusCapture } = useModalViewport(isOpen);
 
   useEffect(() => {
     if (!isOpen) return;
     setErrorMessage(null);
+    setIsConfirmingDelete(false);
     if (initialVehicle) {
       setName(initialVehicle.name);
       setPlateNumber(initialVehicle.plateNumber);
@@ -106,7 +110,7 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
     }
   };
 
-  const handleDelete = async () => {
+  const handleConfirmDelete = async () => {
     if (!initialVehicle || !onDelete) return;
     setIsSubmitting(true);
     try {
@@ -124,7 +128,11 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
       aria-modal="true"
       aria-labelledby="vehicle-modal-title"
     >
-      <div className="modal-sheet">
+      <div
+        className="modal-sheet"
+        style={sheetStyle}
+        onFocusCapture={handleFieldFocusCapture}
+      >
         <header className="modal-header">
           <h2 id="vehicle-modal-title" className="modal-title">
             {isEditMode ? '차량 정보 수정' : '새 차량 등록'}
@@ -225,33 +233,63 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
             </div>
           </div>
 
-          <div className="modal-actions">
-            {isEditMode && onDelete && (
+          {isEditMode && onDelete && isConfirmingDelete ? (
+            <div
+              className="delete-confirm-box"
+              role="alertdialog"
+              aria-label="차량 삭제 확인"
+            >
+              <p className="delete-confirm-text">
+                이 차량을 삭제하면 연관된 모든 정비·검사·보험 기록과 첨부 사진이 함께 삭제됩니다. 정말 삭제하시겠습니까?
+              </p>
+              <div className="delete-confirm-actions">
+                <button
+                  type="button"
+                  className="btn btn-secondary touch-target"
+                  onClick={() => setIsConfirmingDelete(false)}
+                  disabled={isSubmitting}
+                >
+                  삭제 취소
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-danger touch-target"
+                  onClick={handleConfirmDelete}
+                  disabled={isSubmitting}
+                >
+                  삭제 확인
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="modal-actions">
+              {isEditMode && onDelete && (
+                <button
+                  type="button"
+                  className="btn btn-danger-outline touch-target"
+                  onClick={() => setIsConfirmingDelete(true)}
+                  disabled={isSubmitting}
+                >
+                  차량 삭제
+                </button>
+              )}
               <button
                 type="button"
-                className="btn btn-danger-outline touch-target"
-                onClick={handleDelete}
+                className="btn btn-secondary touch-target"
+                onClick={onClose}
                 disabled={isSubmitting}
               >
-                차량 삭제
+                취소
               </button>
-            )}
-            <button
-              type="button"
-              className="btn btn-secondary touch-target"
-              onClick={onClose}
-              disabled={isSubmitting}
-            >
-              취소
-            </button>
-            <button
-              type="submit"
-              className="btn btn-primary touch-target"
-              disabled={isSubmitting}
-            >
-              {isEditMode ? '수정 저장' : '차량 등록'}
-            </button>
-          </div>
+              <button
+                type="submit"
+                className="btn btn-primary touch-target"
+                disabled={isSubmitting}
+              >
+                {isEditMode ? '수정 저장' : '차량 등록'}
+              </button>
+            </div>
+          )}
         </form>
       </div>
     </div>
