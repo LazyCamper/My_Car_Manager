@@ -8,7 +8,7 @@ import { VitePWA } from 'vite-plugin-pwa';
  * 배포 주소: https://[계정].github.io/[저장소명]/
  * 실제 GitHub 저장소 이름과 다를 경우 아래 REPO_NAME 문자열을 저장소명으로 수정하세요.
  */
-const REPO_NAME = 'My_Car_Manager';
+const REPO_NAME = 'my-car-manager';
 
 export default defineConfig(({ mode }) => {
   const basePath = mode === 'production' ? `/${REPO_NAME}/` : '/';
