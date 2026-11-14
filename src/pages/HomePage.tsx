@@ -1,0 +1,166 @@
+import React, { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useActiveVehicle } from '../app/ActiveVehicleContext';
+import { useRepositories } from '../app/RepositoryContext';
+import {
+  LAST_BACKUP_DATE_META_KEY,
+  UpcomingDueItem,
+  Vehicle,
+  VehicleInput,
+} from '../domain/models';
+import { buildUpcomingDueItems } from '../domain/services';
+import { isBackupOverdue } from '../features/backup';
+import { UpcomingDueSection } from '../features/dashboard';
+import { VehicleFormModal, VehicleSwitcher } from '../features/vehicle';
+
+export const HomePage: React.FC = () => {
+  const {
+    vehicles,
+    activeVehicle,
+    isLoading: isVehicleLoading,
+    selectVehicle,
+    saveVehicle,
+    deleteVehicle,
+  } = useActiveVehicle();
+  const { complianceRepo, maintenanceRepo, appMetaRepo } = useRepositories();
+
+  const [upcomingItems, setUpcomingItems] = useState<UpcomingDueItem[]>([]);
+  const [isDueLoading, setIsDueLoading] = useState<boolean>(false);
+  const [lastBackupDate, setLastBackupDate] = useState<string | undefined>(
+    undefined,
+  );
+
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
+
+  const loadUpcomingDue = useCallback(
+    async (vehicleId: string) => {
+      setIsDueLoading(true);
+      try {
+        const [inspection, insurance, maintenanceLogs, savedBackupDate] =
+          await Promise.all([
+            complianceRepo.getCurrentInspection(vehicleId),
+            complianceRepo.getCurrentInsurance(vehicleId),
+            maintenanceRepo.getUpcomingDueByVehicle(vehicleId),
+            appMetaRepo.get<string>(LAST_BACKUP_DATE_META_KEY),
+          ]);
+
+        const items = buildUpcomingDueItems({
+          inspection,
+          insurance,
+          maintenanceLogs,
+        });
+        setUpcomingItems(items);
+        setLastBackupDate(savedBackupDate);
+      } finally {
+        setIsDueLoading(false);
+      }
+    },
+    [complianceRepo, maintenanceRepo, appMetaRepo],
+  );
+
+  useEffect(() => {
+    void appMetaRepo
+      .get<string>(LAST_BACKUP_DATE_META_KEY)
+      .then((date) => setLastBackupDate(date));
+  }, [appMetaRepo]);
+
+  useEffect(() => {
+    if (!activeVehicle) {
+      setUpcomingItems([]);
+      return;
+    }
+    void loadUpcomingDue(activeVehicle.id);
+  }, [activeVehicle, loadUpcomingDue]);
+
+  const handleOpenAddModal = () => {
+    setEditingVehicle(null);
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModal = (vehicle: Vehicle) => {
+    setEditingVehicle(vehicle);
+    setIsModalOpen(true);
+  };
+
+  const handleSaveVehicle = async (input: VehicleInput) => {
+    await saveVehicle(input);
+  };
+
+  const showBackupBanner = isBackupOverdue(lastBackupDate);
+
+  return (
+    <section aria-labelledby="home-title" className="home-page">
+      <header className="page-header home-page-header">
+        <h1 id="home-title" className="page-title">
+          홈
+        </h1>
+      </header>
+
+      {showBackupBanner && (
+        <div
+          className="backup-reminder-banner"
+          role="region"
+          aria-label="백업 권장 안내"
+          data-testid="backup-reminder-banner"
+        >
+          <div className="backup-reminder-text">
+            <strong>백업이 필요합니다 (30일 경과)</strong>
+            <span>
+              마지막 백업 날짜({lastBackupDate})로부터 30일이 지났습니다. 데이터 유실 방지를 위해 백업해 주세요.
+            </span>
+          </div>
+          <Link to="/settings" className="btn btn-chip-primary touch-target">
+            백업하기
+          </Link>
+        </div>
+      )}
+
+      {isVehicleLoading ? (
+        <div className="empty-state-box">
+          <p className="empty-state-desc">차량 정보를 불러오는 중입니다...</p>
+        </div>
+      ) : !activeVehicle ? (
+        <div className="empty-state-box" data-testid="empty-vehicle-state">
+          <div className="empty-state-icon" aria-hidden="true">
+            🚗
+          </div>
+          <h2 className="empty-state-title">등록된 차량이 없습니다</h2>
+          <p className="empty-state-desc">
+            내 차량의 이름(별칭), 번호판, 연식, 주행거리를 등록하고 자동차 검사·보험 만기와 정비 내역을 한눈에 관리해 보세요.
+          </p>
+          <button
+            type="button"
+            className="btn btn-primary touch-target"
+            onClick={handleOpenAddModal}
+          >
+            + 첫 차량 등록하기
+          </button>
+        </div>
+      ) : (
+        <>
+          <VehicleSwitcher
+            vehicles={vehicles}
+            activeVehicle={activeVehicle}
+            onSelectVehicle={(id) => void selectVehicle(id)}
+            onOpenAddModal={handleOpenAddModal}
+            onOpenEditModal={handleOpenEditModal}
+          />
+
+          <UpcomingDueSection
+            items={upcomingItems}
+            isLoading={isDueLoading}
+          />
+        </>
+      )}
+
+      <VehicleFormModal
+        isOpen={isModalOpen}
+        initialVehicle={editingVehicle}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleSaveVehicle}
+        onDelete={editingVehicle ? deleteVehicle : undefined}
+      />
+    </section>
+  );
+};
