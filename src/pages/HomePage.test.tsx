@@ -401,9 +401,9 @@ describe('홈 화면 및 차량 등록/수정/전환 통합 테스트', () => {
       screen.getByText(/에어컨필터 245 \* 178 \* 28/),
     ).toBeInTheDocument();
 
-    // 비밀번호 · 메모 수정 클릭하여 메모 및 차량 배경 사진 업로드 테스트
+    // 메모 수정 클릭하여 메모 및 차량 배경 사진 업로드 테스트
     fireEvent.click(
-      screen.getByRole('button', { name: '비밀번호 · 메모 수정' }),
+      screen.getByRole('button', { name: '메모 수정' }),
     );
     const bgFileInput = screen.getByTestId('vehicle-bg-file-input');
     const photoFile = new File(['car-photo-bytes'], 'my-car.jpg', {

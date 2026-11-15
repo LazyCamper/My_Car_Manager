@@ -112,6 +112,20 @@ export const MaintenanceTimeline: React.FC<MaintenanceTimelineProps> = ({
                           : '주행거리 미기재'}
                         {log.shopName ? ` · ${log.shopName}` : ''}
                       </span>
+                      {(log.nextDueDate ||
+                        typeof log.nextDueMileage === 'number') && (
+                        <span className="timeline-submeta">
+                          다음 예정:{' '}
+                          {[
+                            log.nextDueDate,
+                            typeof log.nextDueMileage === 'number'
+                              ? formatMileage(log.nextDueMileage)
+                              : null,
+                          ]
+                            .filter(Boolean)
+                            .join(' · ')}
+                        </span>
+                      )}
                       {log.memo && <p className="timeline-memo">{log.memo}</p>}
                     </div>
                   </button>

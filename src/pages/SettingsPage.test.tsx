@@ -507,7 +507,7 @@ describe('설정 화면 백업 내보내기/가져오기 및 30일 경과 안내
     ).toHaveTextContent(thirtyFiveDaysAgo);
   });
 
-  it('설정 화면에 "iPhone은 Safari 공유 → 홈 화면에 추가" 안내 문구가 표시된다', async () => {
+  it('사용시 주의사항 버튼을 누르면 "홈 화면 앱 설치 및 데이터 보호 안내" 모달이 표시되고 닫힌다', async () => {
     const { repos } = createStatefulBackupTestRepos();
 
     render(
@@ -520,11 +520,48 @@ describe('설정 화면 백업 내보내기/가져오기 및 30일 경과 안내
       </RepositoryProvider>,
     );
 
+    const noticeButton = await screen.findByRole('button', {
+      name: /사용시 주의사항/,
+    });
+    fireEvent.click(noticeButton);
+
     await waitFor(() => {
       expect(screen.getByTestId('ios-install-guide')).toBeInTheDocument();
     });
     expect(screen.getByTestId('ios-install-guide')).toHaveTextContent(
       'iPhone은 Safari 공유 → 홈 화면에 추가',
     );
+
+    fireEvent.click(screen.getByRole('button', { name: '확인' }));
+    expect(screen.queryByTestId('ios-install-guide')).not.toBeInTheDocument();
+  });
+
+  it('도움말 보기 버튼을 누르면 도움말 모달이 열리고 닫기 버튼으로 닫힌다', async () => {
+    const { repos } = createStatefulBackupTestRepos();
+
+    render(
+      <RepositoryProvider repositories={repos}>
+        <ActiveVehicleProvider>
+          <MemoryRouter initialEntries={['/settings']}>
+            <AppRoutes />
+          </MemoryRouter>
+        </ActiveVehicleProvider>
+      </RepositoryProvider>,
+    );
+
+    const helpButton = await screen.findByRole('button', {
+      name: /도움말 보기/,
+    });
+    fireEvent.click(helpButton);
+
+    expect(
+      screen.getByRole('dialog', { name: '내 차 관리 도움말' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/나의 차고 \(차량 관리\)/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '확인' }));
+    expect(
+      screen.queryByRole('dialog', { name: '내 차 관리 도움말' }),
+    ).not.toBeInTheDocument();
   });
 });

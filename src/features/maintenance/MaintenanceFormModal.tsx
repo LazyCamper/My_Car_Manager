@@ -53,6 +53,7 @@ export const MaintenanceFormModal: React.FC<MaintenanceFormModalProps> = ({
   const [shopName, setShopName] = useState('');
   const [memo, setMemo] = useState('');
   const [nextDueDate, setNextDueDate] = useState('');
+  const [nextDueMileage, setNextDueMileage] = useState('');
   const [photos, setPhotos] = useState<PhotoDraftItem[]>([]);
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -83,6 +84,11 @@ export const MaintenanceFormModal: React.FC<MaintenanceFormModalProps> = ({
       setShopName(initialLog.shopName ?? '');
       setMemo(initialLog.memo ?? '');
       setNextDueDate(initialLog.nextDueDate ?? '');
+      setNextDueMileage(
+        typeof initialLog.nextDueMileage === 'number'
+          ? String(initialLog.nextDueMileage)
+          : '',
+      );
 
       if (initialLog.attachmentIds && initialLog.attachmentIds.length > 0) {
         void attachmentRepo
@@ -116,6 +122,7 @@ export const MaintenanceFormModal: React.FC<MaintenanceFormModalProps> = ({
       setShopName('');
       setMemo('');
       setNextDueDate('');
+      setNextDueMileage('');
       setPhotos([]);
     }
 
@@ -219,6 +226,18 @@ export const MaintenanceFormModal: React.FC<MaintenanceFormModalProps> = ({
       }
     }
 
+    let finalNextDueMileage: number | undefined;
+    if (nextDueMileage.trim() !== '') {
+      const parsedNextDueMileage = Number(nextDueMileage);
+      if (!Number.isFinite(parsedNextDueMileage) || parsedNextDueMileage < 0) {
+        setErrorMessage(
+          '다음 정비 예정 주행거리는 0 이상의 숫자로 입력해 주세요.',
+        );
+        return;
+      }
+      finalNextDueMileage = Math.round(parsedNextDueMileage);
+    }
+
     setIsSubmitting(true);
     const newlySavedIds: string[] = [];
     try {
@@ -261,7 +280,7 @@ export const MaintenanceFormModal: React.FC<MaintenanceFormModalProps> = ({
         shopName: shopName.trim() || undefined,
         memo: memo.trim() || undefined,
         nextDueDate: formattedNextDueDate,
-        nextDueMileage: initialLog?.nextDueMileage,
+        nextDueMileage: finalNextDueMileage,
         isDueCompleted: initialLog?.isDueCompleted ?? false,
         attachmentIds: finalAttachmentIds,
       });
@@ -437,19 +456,36 @@ export const MaintenanceFormModal: React.FC<MaintenanceFormModalProps> = ({
             </div>
           </div>
 
-          <div className="form-field">
-            <label htmlFor="maint-next-due" className="form-label">
-              다음 정비 예정일 (선택)
-            </label>
-            <input
-              id="maint-next-due"
-              type="text"
-              inputMode="numeric"
-              className="form-input touch-target"
-              placeholder="예: 2027.03.15"
-              value={nextDueDate}
-              onChange={(e) => setNextDueDate(e.target.value)}
-            />
+          <div className="form-row-2col">
+            <div className="form-field">
+              <label htmlFor="maint-next-due" className="form-label">
+                다음 정비 예정일 (선택)
+              </label>
+              <input
+                id="maint-next-due"
+                type="text"
+                inputMode="numeric"
+                className="form-input touch-target"
+                placeholder="예: 2027.03.15"
+                value={nextDueDate}
+                onChange={(e) => setNextDueDate(e.target.value)}
+              />
+            </div>
+
+            <div className="form-field">
+              <label htmlFor="maint-next-due-mileage" className="form-label">
+                다음 목표 거리 (km) · 선택
+              </label>
+              <input
+                id="maint-next-due-mileage"
+                type="number"
+                inputMode="numeric"
+                className="form-input touch-target"
+                placeholder="예: 26000"
+                value={nextDueMileage}
+                onChange={(e) => setNextDueMileage(e.target.value)}
+              />
+            </div>
           </div>
 
           <div className="form-field">

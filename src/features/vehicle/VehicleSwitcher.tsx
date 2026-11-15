@@ -496,13 +496,13 @@ export const VehicleSwitcher: React.FC<VehicleSwitcherProps> = ({
                     {vehicle.memo && (
                       <div className="vehicle-spec-item vehicle-spec-item-wide">
                         <dt className="vehicle-memo-dt">
-                          <span>차량 관리 메모 · 계정</span>
+                          <span>차량 관리 메모</span>
                           <button
                             type="button"
                             className="btn btn-chip"
                             onClick={() => onOpenEditModal(vehicle)}
                           >
-                            비밀번호 · 메모 수정
+                            메모 수정
                           </button>
                         </dt>
                         <dd className="vehicle-memo-dd">{vehicle.memo}</dd>

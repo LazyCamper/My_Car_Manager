@@ -212,6 +212,12 @@ describe('정비 내역 화면 (MaintenancePage) 통합 테스트', () => {
     fireEvent.change(screen.getByLabelText(/정비소/), {
       target: { value: '오토큐 역삼점' },
     });
+    fireEvent.change(screen.getByLabelText(/다음 정비 예정일/), {
+      target: { value: '2027.05.10' },
+    });
+    fireEvent.change(screen.getByLabelText(/다음 목표 거리/), {
+      target: { value: '45000' },
+    });
     fireEvent.change(screen.getByLabelText(/메모/), {
       target: { value: '발수 코팅 와이퍼 장착' },
     });
@@ -225,6 +231,9 @@ describe('정비 내역 화면 (MaintenancePage) 통합 테스트', () => {
       '₩32,000',
     );
     expect(screen.getByText(/오토큐 역삼점/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/다음 예정: 2027\.05\.10 · 45,000km/),
+    ).toBeInTheDocument();
     expect(screen.getByText('발수 코팅 와이퍼 장착')).toBeInTheDocument();
   });
 
