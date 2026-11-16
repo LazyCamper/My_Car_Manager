@@ -2155,6 +2155,32 @@ textarea {
   color: var(--color-text);
 }
 
+.date-quick-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.date-quick-btn {
+  padding: 5px 10px;
+  min-height: 30px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border-subtle);
+  background-color: #f8fafc;
+  color: #334155;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.date-quick-btn:hover {
+  background-color: var(--color-primary-bg);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
 /* 작은 모바일 화면 (폭 360px 이하) 대응 */
 @media (max-width: 360px) {
   .form-row-2col,

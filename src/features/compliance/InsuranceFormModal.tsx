@@ -5,6 +5,7 @@ import {
   PhotoAttachmentField,
   PhotoDraftItem,
 } from '../../shared/components/PhotoAttachmentField';
+import { DateQuickAdjustButtons } from '../../shared/components/DateQuickAdjustButtons';
 import {
   addYearsClamped,
   formatDateDot,
@@ -326,6 +327,11 @@ export const InsuranceFormModal: React.FC<InsuranceFormModalProps> = ({
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
                 required
+              />
+              <DateQuickAdjustButtons
+                value={endDate}
+                onChange={setEndDate}
+                fieldLabel="보험 만기일"
               />
             </div>
           </div>

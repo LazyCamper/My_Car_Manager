@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  addMonthsClamped,
   addYearsClamped,
   calculateDday,
   formatDateDot,
@@ -81,6 +82,8 @@ describe('D-day 유틸 함수 테스트 (calculateDday)', () => {
     expect(formatDateDot(addYearsClamped('2028.02.29', 1))).toBe('2029.02.28');
     expect(formatDateDot(addYearsClamped('2028.02.29', 2))).toBe('2030.02.28');
     expect(formatDateDot(addYearsClamped('2028.02.29', 4))).toBe('2032.02.29');
+    expect(formatDateDot(addMonthsClamped('2026.01.31', 1))).toBe('2026.02.28');
+    expect(formatDateDot(addMonthsClamped('2026.11.16', 3))).toBe('2027.02.16');
   });
 });
 

@@ -110,6 +110,38 @@ export function addYearsClamped(
 }
 
 /**
+ * 기준일(dateInput)에 monthsToAdd개월을 더하되,
+ * 31일에서 30일/28일 월로 이동할 때 다음 달로 넘치지 않고 해당 월 말일로 보정합니다.
+ */
+export function addMonthsClamped(
+  dateInput: Date | string,
+  monthsToAdd: number,
+): Date {
+  const base =
+    typeof dateInput === 'string'
+      ? parseDateString(dateInput)
+      : new Date(
+          dateInput.getFullYear(),
+          dateInput.getMonth(),
+          dateInput.getDate(),
+          0,
+          0,
+          0,
+          0,
+        );
+
+  const totalMonths = base.getFullYear() * 12 + base.getMonth() + monthsToAdd;
+  const targetYear = Math.floor(totalMonths / 12);
+  const targetMonth = ((totalMonths % 12) + 12) % 12;
+  const day = base.getDate();
+
+  const lastDayOfTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+  const clampedDay = Math.min(day, lastDayOfTargetMonth);
+
+  return new Date(targetYear, targetMonth, clampedDay, 0, 0, 0, 0);
+}
+
+/**
  * Date 객체 또는 날짜 문자열을 'YYYY.MM.DD' 형식으로 변환합니다.
  */
 export function formatDateDot(dateInput: Date | string): string {

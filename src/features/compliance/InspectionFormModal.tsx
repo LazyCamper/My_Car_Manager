@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Inspection } from '../../domain/models';
+import { DateQuickAdjustButtons } from '../../shared/components/DateQuickAdjustButtons';
 import {
   addYearsClamped,
   formatDateDot,
@@ -209,6 +210,11 @@ export const InspectionFormModal: React.FC<InspectionFormModalProps> = ({
                 value={expiryDate}
                 onChange={(e) => setExpiryDate(e.target.value)}
                 required
+              />
+              <DateQuickAdjustButtons
+                value={expiryDate}
+                onChange={setExpiryDate}
+                fieldLabel="다음 만기일"
               />
             </div>
           </div>

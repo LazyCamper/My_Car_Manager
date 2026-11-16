@@ -5,6 +5,7 @@ import {
   PhotoAttachmentField,
   PhotoDraftItem,
 } from '../../shared/components/PhotoAttachmentField';
+import { DateQuickAdjustButtons } from '../../shared/components/DateQuickAdjustButtons';
 import {
   formatDateDot,
   parseDateString,
@@ -469,6 +470,11 @@ export const MaintenanceFormModal: React.FC<MaintenanceFormModalProps> = ({
                 placeholder="예: 2027.03.15"
                 value={nextDueDate}
                 onChange={(e) => setNextDueDate(e.target.value)}
+              />
+              <DateQuickAdjustButtons
+                value={nextDueDate}
+                onChange={setNextDueDate}
+                fieldLabel="다음 정비 예정일"
               />
             </div>
 
