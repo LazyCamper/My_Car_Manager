@@ -215,9 +215,13 @@ describe('정비 내역 화면 (MaintenancePage) 통합 테스트', () => {
     fireEvent.change(screen.getByLabelText(/다음 정비 예정일/), {
       target: { value: '2027.05.10' },
     });
-    fireEvent.change(screen.getByLabelText(/다음 목표 거리/), {
-      target: { value: '45000' },
-    });
+    // 현재(35200) -> +1만 -> 45200 빠른 입력 버튼 검증
+    fireEvent.click(screen.getByRole('button', { name: '현재' }));
+    expect(screen.getByLabelText(/다음 목표 거리/)).toHaveValue(35200);
+    fireEvent.click(screen.getByRole('button', { name: '+1만' }));
+    expect(screen.getByLabelText(/다음 목표 거리/)).toHaveValue(45200);
+    fireEvent.click(screen.getByRole('button', { name: '+1천' }));
+    expect(screen.getByLabelText(/다음 목표 거리/)).toHaveValue(46200);
     fireEvent.change(screen.getByLabelText(/메모/), {
       target: { value: '발수 코팅 와이퍼 장착' },
     });
@@ -232,7 +236,7 @@ describe('정비 내역 화면 (MaintenancePage) 통합 테스트', () => {
     );
     expect(screen.getByText(/오토큐 역삼점/)).toBeInTheDocument();
     expect(
-      screen.getByText(/다음 예정: 2027\.05\.10 · 45,000km/),
+      screen.getByText(/다음 예정: 2027\.05\.10 · 46,200km/),
     ).toBeInTheDocument();
     expect(screen.getByText('발수 코팅 와이퍼 장착')).toBeInTheDocument();
   });

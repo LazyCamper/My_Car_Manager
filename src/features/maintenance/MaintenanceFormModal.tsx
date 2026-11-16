@@ -317,6 +317,29 @@ export const MaintenanceFormModal: React.FC<MaintenanceFormModalProps> = ({
     }
   };
 
+  const resolveCurrentMileageBase = (): number => {
+    const entered = Number(mileage);
+    if (mileage.trim() !== '' && Number.isFinite(entered) && entered >= 0) {
+      return Math.round(entered);
+    }
+    return Math.max(0, Math.round(defaultMileage));
+  };
+
+  const handleSetCurrentDueMileage = () => {
+    setNextDueMileage(String(resolveCurrentMileageBase()));
+  };
+
+  const handleAddDueMileage = (delta: number) => {
+    const existing = Number(nextDueMileage);
+    const base =
+      nextDueMileage.trim() !== '' &&
+      Number.isFinite(existing) &&
+      existing >= 0
+        ? Math.round(existing)
+        : resolveCurrentMileageBase();
+    setNextDueMileage(String(base + delta));
+  };
+
   return (
     <div
       className="modal-backdrop"
@@ -491,6 +514,32 @@ export const MaintenanceFormModal: React.FC<MaintenanceFormModalProps> = ({
                 value={nextDueMileage}
                 onChange={(e) => setNextDueMileage(e.target.value)}
               />
+              <div className="date-quick-buttons">
+                <button
+                  type="button"
+                  className="date-quick-btn"
+                  onClick={handleSetCurrentDueMileage}
+                  title="현재 주행거리로 설정"
+                >
+                  현재
+                </button>
+                <button
+                  type="button"
+                  className="date-quick-btn"
+                  onClick={() => handleAddDueMileage(1000)}
+                  title="다음 목표 거리 1,000km 추가"
+                >
+                  +1천
+                </button>
+                <button
+                  type="button"
+                  className="date-quick-btn"
+                  onClick={() => handleAddDueMileage(10000)}
+                  title="다음 목표 거리 10,000km 추가"
+                >
+                  +1만
+                </button>
+              </div>
             </div>
           </div>
 
