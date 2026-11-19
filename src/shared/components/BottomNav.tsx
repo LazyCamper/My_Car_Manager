@@ -15,7 +15,10 @@ const NAV_ITEMS: NavItem[] = [
     end: true,
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5.5v-6h-5v6H4a1 1 0 0 1-1-1v-9.5z" />
+        <path d="M3 20V9l9-5.5L21 9v11" />
+        <path d="M7 20v-8h10v8" />
+        <path d="M7 15h10" />
+        <path d="M7 18h10" />
       </svg>
     ),
   },

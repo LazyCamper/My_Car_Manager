@@ -564,4 +564,42 @@ describe('설정 화면 백업 내보내기/가져오기 및 30일 경과 안내
       screen.queryByRole('dialog', { name: '내 차 관리 도움말' }),
     ).not.toBeInTheDocument();
   });
+
+  it('백업 파일 공유 / 메일로 보내기 버튼을 누르면 Web Share API로 JSON 파일을 공유한다', async () => {
+    const { repos } = createStatefulBackupTestRepos();
+    const shareMock = vi.fn().mockResolvedValue(undefined);
+    const canShareMock = vi.fn().mockReturnValue(true);
+
+    Object.defineProperty(navigator, 'share', {
+      configurable: true,
+      value: shareMock,
+    });
+    Object.defineProperty(navigator, 'canShare', {
+      configurable: true,
+      value: canShareMock,
+    });
+
+    render(
+      <RepositoryProvider repositories={repos}>
+        <ActiveVehicleProvider>
+          <MemoryRouter initialEntries={['/settings']}>
+            <AppRoutes />
+          </MemoryRouter>
+        </ActiveVehicleProvider>
+      </RepositoryProvider>,
+    );
+
+    const shareButton = await screen.findByRole('button', {
+      name: /백업 파일 공유 \/ 메일로 보내기/,
+    });
+    fireEvent.click(shareButton);
+
+    await waitFor(() => {
+      expect(shareMock).toHaveBeenCalledTimes(1);
+    });
+    const shareArg = shareMock.mock.calls[0][0] as { files: File[] };
+    expect(shareArg.files).toHaveLength(1);
+    expect(shareArg.files[0].name).toMatch(/^my-car-backup-\d{4}\.\d{2}\.\d{2}\.json$/);
+    expect(screen.getByRole('status')).toHaveTextContent('공유했습니다.');
+  });
 });

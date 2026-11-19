@@ -64,16 +64,21 @@ export const SettingsPage: React.FC = () => {
     void loadBackupMeta();
   }, [loadBackupMeta]);
 
+  const createBackupFileData = async () => {
+    const snapshot = await backupRepo.exportSnapshot();
+    const jsonContent = await serializeBackupSnapshot(snapshot);
+    const todayStr = formatDateDot(new Date());
+    const fileName = buildBackupFileName(todayStr);
+    return { jsonContent, todayStr, fileName };
+  };
+
   const handleExportBackup = async () => {
     setErrorMessage(null);
     setStatusMessage(null);
     setIsProcessing(true);
 
     try {
-      const snapshot = await backupRepo.exportSnapshot();
-      const jsonContent = await serializeBackupSnapshot(snapshot);
-      const todayStr = formatDateDot(new Date());
-      const fileName = buildBackupFileName(todayStr);
+      const { jsonContent, todayStr, fileName } = await createBackupFileData();
 
       triggerJsonDownload(jsonContent, fileName);
 
@@ -85,6 +90,54 @@ export const SettingsPage: React.FC = () => {
         err instanceof Error
           ? err.message
           : '백업 내보내기 중 오류가 발생했습니다.',
+      );
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleShareBackup = async () => {
+    setErrorMessage(null);
+    setStatusMessage(null);
+    setIsProcessing(true);
+
+    try {
+      const { jsonContent, todayStr, fileName } = await createBackupFileData();
+      const backupFile = new File([jsonContent], fileName, {
+        type: 'application/json',
+      });
+
+      const canShareFiles =
+        typeof navigator !== 'undefined' &&
+        typeof navigator.share === 'function' &&
+        typeof navigator.canShare === 'function' &&
+        navigator.canShare({ files: [backupFile] });
+
+      if (canShareFiles) {
+        await navigator.share({
+          files: [backupFile],
+          title: `내 차 관리 백업 (${todayStr})`,
+          text: `내 차 관리 백업 파일(${fileName})입니다.`,
+        });
+        await appMetaRepo.set(LAST_BACKUP_DATE_META_KEY, todayStr);
+        setLastBackupDate(todayStr);
+        setStatusMessage(`백업 파일(${fileName})을 공유했습니다.`);
+      } else {
+        triggerJsonDownload(jsonContent, fileName);
+        await appMetaRepo.set(LAST_BACKUP_DATE_META_KEY, todayStr);
+        setLastBackupDate(todayStr);
+        setStatusMessage(
+          `현재 브라우저는 파일 공유를 지원하지 않아 백업 파일(${fileName})을 다운로드했습니다.`,
+        );
+      }
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        return;
+      }
+      setErrorMessage(
+        err instanceof Error
+          ? err.message
+          : '백업 파일 공유 중 오류가 발생했습니다.',
       );
     } finally {
       setIsProcessing(false);
@@ -199,6 +252,15 @@ export const SettingsPage: React.FC = () => {
             disabled={isProcessing}
           >
             📥 백업 파일 내보내기 (JSON)
+          </button>
+
+          <button
+            type="button"
+            className="btn btn-secondary touch-target"
+            onClick={() => void handleShareBackup()}
+            disabled={isProcessing}
+          >
+            ✉️ 백업 파일 공유 / 메일로 보내기
           </button>
 
           <input
