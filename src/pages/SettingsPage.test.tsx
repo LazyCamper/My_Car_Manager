@@ -602,4 +602,53 @@ describe('설정 화면 백업 내보내기/가져오기 및 30일 경과 안내
     expect(shareArg.files[0].name).toMatch(/^my-car-backup-\d{4}\.\d{2}\.\d{2}\.json$/);
     expect(screen.getByRole('status')).toHaveTextContent('공유했습니다.');
   });
+
+  it('navigator.share가 Permission denied(NotAllowedError)를 반환하면 다운로드 폴백 및 [공유 창 바로 열기] 버튼을 표시한다', async () => {
+    const { repos } = createStatefulBackupTestRepos();
+    const permissionErr = new Error('Permission denied');
+    permissionErr.name = 'NotAllowedError';
+    const shareMock = vi
+      .fn()
+      .mockRejectedValueOnce(permissionErr)
+      .mockResolvedValueOnce(undefined);
+    const canShareMock = vi.fn().mockReturnValue(true);
+
+    Object.defineProperty(navigator, 'share', {
+      configurable: true,
+      value: shareMock,
+    });
+    Object.defineProperty(navigator, 'canShare', {
+      configurable: true,
+      value: canShareMock,
+    });
+    URL.createObjectURL = vi.fn(() => 'blob:fallback');
+
+    render(
+      <RepositoryProvider repositories={repos}>
+        <ActiveVehicleProvider>
+          <MemoryRouter initialEntries={['/settings']}>
+            <AppRoutes />
+          </MemoryRouter>
+        </ActiveVehicleProvider>
+      </RepositoryProvider>,
+    );
+
+    fireEvent.click(
+      await screen.findByRole('button', {
+        name: /백업 파일 공유 \/ 메일로 보내기/,
+      }),
+    );
+
+    const immediateShareBtn = await screen.findByRole('button', {
+      name: /공유 창 바로 열기/,
+    });
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('먼저 다운로드했습니다');
+
+    fireEvent.click(immediateShareBtn);
+    await waitFor(() => {
+      expect(shareMock).toHaveBeenCalledTimes(2);
+    });
+    expect(screen.getByRole('status')).toHaveTextContent('공유했습니다.');
+  });
 });
