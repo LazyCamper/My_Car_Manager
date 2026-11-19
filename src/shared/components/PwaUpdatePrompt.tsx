@@ -14,15 +14,30 @@ export const PwaUpdatePrompt: React.FC = () => {
       return;
     }
 
+    let handleVisibilityChange: (() => void) | null = null;
+
     void import('virtual:pwa-register')
       .then(({ registerSW }) => {
         if (!isMounted) return;
         const updateSW = registerSW({
+          immediate: true,
           onNeedRefresh() {
-            if (isMounted) setNeedRefresh(true);
+            void updateSW(true);
           },
           onOfflineReady() {
             if (isMounted) setOfflineReady(true);
+          },
+          onRegisteredSW(_swUrl, registration) {
+            if (!registration) return;
+            handleVisibilityChange = () => {
+              if (document.visibilityState === 'visible') {
+                void registration.update();
+              }
+            };
+            document.addEventListener(
+              'visibilitychange',
+              handleVisibilityChange,
+            );
           },
         });
         setUpdateSwFn(() => updateSW);
@@ -33,6 +48,12 @@ export const PwaUpdatePrompt: React.FC = () => {
 
     return () => {
       isMounted = false;
+      if (handleVisibilityChange) {
+        document.removeEventListener(
+          'visibilitychange',
+          handleVisibilityChange,
+        );
+      }
     };
   }, []);
 
