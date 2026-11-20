@@ -54,11 +54,6 @@ export const SettingsPage: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [isNoticeOpen, setIsNoticeOpen] = useState<boolean>(false);
   const [isHelpOpen, setIsHelpOpen] = useState<boolean>(false);
-  const [preparedShare, setPreparedShare] = useState<{
-    file: File;
-    fileName: string;
-    todayStr: string;
-  } | null>(null);
 
   const loadBackupMeta = useCallback(async () => {
     const savedDate = await appMetaRepo.get<string>(LAST_BACKUP_DATE_META_KEY);
@@ -69,21 +64,16 @@ export const SettingsPage: React.FC = () => {
     void loadBackupMeta();
   }, [loadBackupMeta]);
 
-  const createBackupFileData = async () => {
-    const snapshot = await backupRepo.exportSnapshot();
-    const jsonContent = await serializeBackupSnapshot(snapshot);
-    const todayStr = formatDateDot(new Date());
-    const fileName = buildBackupFileName(todayStr);
-    return { jsonContent, todayStr, fileName };
-  };
-
   const handleExportBackup = async () => {
     setErrorMessage(null);
     setStatusMessage(null);
     setIsProcessing(true);
 
     try {
-      const { jsonContent, todayStr, fileName } = await createBackupFileData();
+      const snapshot = await backupRepo.exportSnapshot();
+      const jsonContent = await serializeBackupSnapshot(snapshot);
+      const todayStr = formatDateDot(new Date());
+      const fileName = buildBackupFileName(todayStr);
 
       triggerJsonDownload(jsonContent, fileName);
 
@@ -95,118 +85,6 @@ export const SettingsPage: React.FC = () => {
         err instanceof Error
           ? err.message
           : '백업 내보내기 중 오류가 발생했습니다.',
-      );
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const executeImmediateShare = async (target: {
-    file: File;
-    fileName: string;
-    todayStr: string;
-  }) => {
-    setErrorMessage(null);
-    setStatusMessage(null);
-    try {
-      await navigator.share({
-        files: [target.file],
-        title: `내 차 관리 백업 (${target.todayStr})`,
-        text: `내 차 관리 백업 파일(${target.fileName})입니다.`,
-      });
-      await appMetaRepo.set(LAST_BACKUP_DATE_META_KEY, target.todayStr);
-      setLastBackupDate(target.todayStr);
-      setPreparedShare(null);
-      setStatusMessage(`백업 파일(${target.fileName})을 공유했습니다.`);
-    } catch (err) {
-      if (err instanceof Error && err.name === 'AbortError') {
-        return;
-      }
-      const isPermissionBlocked =
-        err instanceof Error &&
-        (err.name === 'NotAllowedError' ||
-          err.name === 'SecurityError' ||
-          /permission/i.test(err.message));
-      if (isPermissionBlocked) {
-        const text = await target.file.text();
-        triggerJsonDownload(text, target.fileName);
-        await appMetaRepo.set(LAST_BACKUP_DATE_META_KEY, target.todayStr);
-        setLastBackupDate(target.todayStr);
-        setStatusMessage(
-          `브라우저 정책으로 자동 공유가 제한되어 백업 파일(${target.fileName})을 다운로드했습니다.`,
-        );
-        return;
-      }
-      setErrorMessage(
-        err instanceof Error
-          ? err.message
-          : '백업 파일 공유 중 오류가 발생했습니다.',
-      );
-    }
-  };
-
-  const handleShareBackup = async () => {
-    setErrorMessage(null);
-    setStatusMessage(null);
-    setPreparedShare(null);
-    setIsProcessing(true);
-
-    try {
-      const { jsonContent, todayStr, fileName } = await createBackupFileData();
-      const backupFile = new File([jsonContent], fileName, {
-        type: 'application/json',
-      });
-
-      const canShareFiles =
-        typeof navigator !== 'undefined' &&
-        typeof navigator.share === 'function' &&
-        typeof navigator.canShare === 'function' &&
-        navigator.canShare({ files: [backupFile] });
-
-      if (canShareFiles) {
-        try {
-          await navigator.share({
-            files: [backupFile],
-            title: `내 차 관리 백업 (${todayStr})`,
-            text: `내 차 관리 백업 파일(${fileName})입니다.`,
-          });
-          await appMetaRepo.set(LAST_BACKUP_DATE_META_KEY, todayStr);
-          setLastBackupDate(todayStr);
-          setStatusMessage(`백업 파일(${fileName})을 공유했습니다.`);
-        } catch (shareErr) {
-          if (shareErr instanceof Error && shareErr.name === 'AbortError') {
-            return;
-          }
-          const isPermissionBlocked =
-            shareErr instanceof Error &&
-            (shareErr.name === 'NotAllowedError' ||
-              shareErr.name === 'SecurityError' ||
-              /permission/i.test(shareErr.message));
-          if (isPermissionBlocked) {
-            setPreparedShare({ file: backupFile, fileName, todayStr });
-            triggerJsonDownload(jsonContent, fileName);
-            await appMetaRepo.set(LAST_BACKUP_DATE_META_KEY, todayStr);
-            setLastBackupDate(todayStr);
-            setStatusMessage(
-              `파일 준비 시간으로 바로 공유가 차단되어 백업 파일(${fileName})을 먼저 다운로드했습니다. 모바일에서 메일·카톡 공유 창을 열려면 아래 [공유 창 바로 열기]를 눌러 주세요.`,
-            );
-            return;
-          }
-          throw shareErr;
-        }
-      } else {
-        triggerJsonDownload(jsonContent, fileName);
-        await appMetaRepo.set(LAST_BACKUP_DATE_META_KEY, todayStr);
-        setLastBackupDate(todayStr);
-        setStatusMessage(
-          `현재 브라우저는 파일 공유를 지원하지 않아 백업 파일(${fileName})을 다운로드했습니다.`,
-        );
-      }
-    } catch (err) {
-      setErrorMessage(
-        err instanceof Error
-          ? err.message
-          : '백업 파일 공유 중 오류가 발생했습니다.',
       );
     } finally {
       setIsProcessing(false);
@@ -322,26 +200,6 @@ export const SettingsPage: React.FC = () => {
           >
             📥 백업 파일 내보내기 (JSON)
           </button>
-
-          <button
-            type="button"
-            className="btn btn-secondary touch-target"
-            onClick={() => void handleShareBackup()}
-            disabled={isProcessing}
-          >
-            ✉️ 백업 파일 공유 / 메일로 보내기
-          </button>
-
-          {preparedShare && (
-            <button
-              type="button"
-              className="btn btn-primary touch-target"
-              onClick={() => void executeImmediateShare(preparedShare)}
-              disabled={isProcessing}
-            >
-              📤 공유 창 바로 열기 ({preparedShare.fileName})
-            </button>
-          )}
 
           <input
             ref={fileInputRef}
