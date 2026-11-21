@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Vehicle } from '../../domain/models';
 import { formatCurrency, formatMileage } from '../../shared/utils';
 
@@ -184,6 +184,105 @@ export const VehicleSwitcher: React.FC<VehicleSwitcherProps> = ({
   const [copiedVinId, setCopiedVinId] = useState<string | null>(null);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [isTouchDragging, setIsTouchDragging] = useState(false);
+  const [touchDragOffsetY, setTouchDragOffsetY] = useState(0);
+
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const longPressTimerRef = useRef<number | null>(null);
+  const touchStartPosRef = useRef<{ x: number; y: number } | null>(null);
+  const suppressClickRef = useRef(false);
+  const touchStateRef = useRef<{
+    isDragging: boolean;
+    draggedIndex: number | null;
+    dragOverIndex: number | null;
+  }>({
+    isDragging: false,
+    draggedIndex: null,
+    dragOverIndex: null,
+  });
+
+  touchStateRef.current = {
+    isDragging: isTouchDragging,
+    draggedIndex,
+    dragOverIndex,
+  };
+
+  const clearLongPressTimer = () => {
+    if (longPressTimerRef.current !== null) {
+      window.clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      clearLongPressTimer();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isTouchDragging) return;
+
+    const handleWindowTouchMove = (e: TouchEvent) => {
+      if (!touchStateRef.current.isDragging || e.touches.length !== 1) return;
+      e.preventDefault();
+
+      const touch = e.touches[0];
+      if (touchStartPosRef.current) {
+        setTouchDragOffsetY(touch.clientY - touchStartPosRef.current.y);
+      }
+
+      const listEl = listRef.current;
+      if (!listEl) return;
+      const cardEls = listEl.querySelectorAll<HTMLElement>('[data-vehicle-index]');
+      for (const cardEl of cardEls) {
+        const rect = cardEl.getBoundingClientRect();
+        if (touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
+          const targetIdx = Number(cardEl.dataset.vehicleIndex);
+          if (!Number.isNaN(targetIdx)) {
+            setDragOverIndex(targetIdx);
+          }
+          break;
+        }
+      }
+    };
+
+    const finishTouchDrag = () => {
+      clearLongPressTimer();
+      const {
+        draggedIndex: fromIdx,
+        dragOverIndex: toIdx,
+      } = touchStateRef.current;
+      if (
+        fromIdx !== null &&
+        toIdx !== null &&
+        fromIdx !== toIdx &&
+        onReorderVehicles
+      ) {
+        onReorderVehicles(fromIdx, toIdx);
+      }
+      setIsTouchDragging(false);
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      setTouchDragOffsetY(0);
+      touchStartPosRef.current = null;
+      window.setTimeout(() => {
+        suppressClickRef.current = false;
+      }, 100);
+    };
+
+    window.addEventListener('touchmove', handleWindowTouchMove, {
+      passive: false,
+    });
+    window.addEventListener('touchend', finishTouchDrag);
+    window.addEventListener('touchcancel', finishTouchDrag);
+
+    return () => {
+      window.removeEventListener('touchmove', handleWindowTouchMove);
+      window.removeEventListener('touchend', finishTouchDrag);
+      window.removeEventListener('touchcancel', finishTouchDrag);
+    };
+  }, [isTouchDragging, onReorderVehicles]);
 
   const toggleSpecOpen = (vehicleId: string) => {
     setExpandedVehicleIds((prev) => ({
@@ -237,6 +336,57 @@ export const VehicleSwitcher: React.FC<VehicleSwitcherProps> = ({
     setDragOverIndex(null);
   };
 
+  const handleTouchStart = (
+    e: React.TouchEvent<HTMLElement>,
+    index: number,
+  ) => {
+    if (vehicles.length <= 1 || !onReorderVehicles || e.touches.length !== 1) {
+      return;
+    }
+    const target = e.target as HTMLElement | null;
+    if (target?.closest('button, a, input, select, textarea, code')) {
+      return;
+    }
+
+    const touch = e.touches[0];
+    touchStartPosRef.current = { x: touch.clientX, y: touch.clientY };
+    clearLongPressTimer();
+    longPressTimerRef.current = window.setTimeout(() => {
+      suppressClickRef.current = true;
+      setIsTouchDragging(true);
+      setDraggedIndex(index);
+      setDragOverIndex(index);
+      setTouchDragOffsetY(0);
+      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+        try {
+          navigator.vibrate(25);
+        } catch {
+          // ignore vibration errors
+        }
+      }
+    }, 400);
+  };
+
+  const handleTouchMoveBeforeDrag = (e: React.TouchEvent<HTMLElement>) => {
+    if (isTouchDragging || !touchStartPosRef.current || e.touches.length !== 1) {
+      return;
+    }
+    const touch = e.touches[0];
+    const dx = Math.abs(touch.clientX - touchStartPosRef.current.x);
+    const dy = Math.abs(touch.clientY - touchStartPosRef.current.y);
+    if (dx > 10 || dy > 10) {
+      clearLongPressTimer();
+      touchStartPosRef.current = null;
+    }
+  };
+
+  const handleTouchEndBeforeDrag = () => {
+    if (!isTouchDragging) {
+      clearLongPressTimer();
+      touchStartPosRef.current = null;
+    }
+  };
+
   return (
     <section
       className="vehicle-header-card"
@@ -258,7 +408,8 @@ export const VehicleSwitcher: React.FC<VehicleSwitcherProps> = ({
       </div>
 
       <div
-        className="owned-vehicle-list"
+        ref={listRef}
+        className={`owned-vehicle-list${isTouchDragging ? ' touch-reordering' : ''}`}
         data-testid="owned-vehicles-list"
         aria-label="보유 차량 전체 목록"
       >
@@ -266,7 +417,10 @@ export const VehicleSwitcher: React.FC<VehicleSwitcherProps> = ({
           const isSelected = vehicle.id === activeVehicle.id;
           const isSpecOpen = Boolean(expandedVehicleIds[vehicle.id]);
           const showDetailToggle = hasVehicleDetailSpecs(vehicle);
-          const isDragOver = dragOverIndex === index;
+          const isBeingTouchDragged =
+            isTouchDragging && draggedIndex === index;
+          const isDragOver =
+            dragOverIndex === index && draggedIndex !== index;
           const mileageRefDate =
             vehicle.mileageUpdatedAt || mileageDatesByVehicle[vehicle.id];
           const drivenSincePurchase =
@@ -282,19 +436,37 @@ export const VehicleSwitcher: React.FC<VehicleSwitcherProps> = ({
           return (
             <article
               key={vehicle.id}
-              className={`owned-vehicle-card${isSelected ? ' selected' : ''}${hasCustomPhoto ? ' has-photo-bg' : ''}${isDragOver ? ' drag-over' : ''}`}
+              className={`owned-vehicle-card${isSelected ? ' selected' : ''}${hasCustomPhoto ? ' has-photo-bg' : ''}${isDragOver ? ' drag-over' : ''}${isBeingTouchDragged ? ' touch-dragging' : ''}`}
               data-testid={`vehicle-card-${vehicle.id}`}
+              data-vehicle-index={index}
+              style={
+                isBeingTouchDragged
+                  ? {
+                      transform: `translateY(${touchDragOffsetY}px) scale(1.02)`,
+                    }
+                  : undefined
+              }
               draggable={vehicles.length > 1}
               onDragStart={() => handleDragStart(index)}
               onDragOver={(e) => handleDragOver(e, index)}
               onDrop={(e) => handleDrop(e, index)}
               onDragEnd={handleDragEnd}
+              onTouchStart={(e) => handleTouchStart(e, index)}
+              onTouchMove={handleTouchMoveBeforeDrag}
+              onTouchEnd={handleTouchEndBeforeDrag}
+              onTouchCancel={handleTouchEndBeforeDrag}
+              onContextMenu={(e) => {
+                if (isTouchDragging || suppressClickRef.current) {
+                  e.preventDefault();
+                }
+              }}
             >
               {renderVehicleSilhouette(vehicle)}
 
               <div
                 className="vehicle-summary-row"
                 onClick={() => {
+                  if (suppressClickRef.current) return;
                   if (!isSelected) {
                     onSelectVehicle(vehicle.id);
                   }
